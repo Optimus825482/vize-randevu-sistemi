@@ -11,7 +11,16 @@ class Config:
     
     # Veritabanı ayarları
     # Railway DATABASE_URL'i önce kontrol et
-    database_url = os.environ.get('DATABASE_URL')
+    database_url = os.environ.get('DATABASE_URL') or os.environ.get('MYSQL_URL')
+    
+    # Debug için
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        print(f"🔍 Railway Environment Detected")
+        print(f"🔍 DATABASE_URL exists: {bool(os.environ.get('DATABASE_URL'))}")
+        print(f"🔍 MYSQL_URL exists: {bool(os.environ.get('MYSQL_URL'))}")
+        if database_url:
+            # Güvenlik için sadece host bilgisini göster
+            print(f"🔍 Using database URL: {database_url.split('@')[1] if '@' in database_url else 'Invalid URL'}")
     
     if database_url:
         # Railway MySQL URL formatını düzelt
@@ -20,6 +29,7 @@ class Config:
         SQLALCHEMY_DATABASE_URI = database_url
     else:
         # Local development için
+        print("⚠️ No DATABASE_URL found, using local config")
         DB_HOST = os.environ.get('DB_HOST', 'localhost')
         DB_USER = os.environ.get('DB_USER', 'root')
         DB_PASSWORD = os.environ.get('DB_PASSWORD', '')

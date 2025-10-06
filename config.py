@@ -10,17 +10,42 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
     # Veritabanı ayarları
-    # Railway DATABASE_URL'i önce kontrol et
-    database_url = os.environ.get('DATABASE_URL') or os.environ.get('MYSQL_URL')
+    # Railway DATABASE_URL'i önce kontrol et - Tüm olası isimleri dene
+    database_url = (
+        os.environ.get('DATABASE_URL') or 
+        os.environ.get('MYSQL_URL') or
+        os.environ.get('DATABASE_PRIVATE_URL') or
+        os.environ.get('MYSQLHOST')  # Eğer ayrı parametreler varsa
+    )
     
-    # Debug için
-    if os.environ.get('RAILWAY_ENVIRONMENT'):
-        print(f"🔍 Railway Environment Detected")
-        print(f"🔍 DATABASE_URL exists: {bool(os.environ.get('DATABASE_URL'))}")
-        print(f"🔍 MYSQL_URL exists: {bool(os.environ.get('MYSQL_URL'))}")
-        if database_url:
-            # Güvenlik için sadece host bilgisini göster
-            print(f"🔍 Using database URL: {database_url.split('@')[1] if '@' in database_url else 'Invalid URL'}")
+    # Eğer MYSQLHOST var ama URL yok ise, manuel olarak oluştur
+    if not database_url and os.environ.get('MYSQLHOST'):
+        mysql_host = os.environ.get('MYSQLHOST')
+        mysql_port = os.environ.get('MYSQLPORT', '3306')
+        mysql_user = os.environ.get('MYSQLUSER', 'root')
+        mysql_password = os.environ.get('MYSQLPASSWORD', '')
+        mysql_database = os.environ.get('MYSQLDATABASE', 'railway')
+        database_url = f"mysql://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_database}"
+        print(f"🔧 Constructed DATABASE_URL from individual variables")
+    
+    # Debug için - TÜM environment variables'ı listele
+    print("=" * 60)
+    print("🔍 Environment Variables Check:")
+    print("=" * 60)
+    env_vars_to_check = [
+        'DATABASE_URL', 'MYSQL_URL', 'DATABASE_PRIVATE_URL',
+        'MYSQLHOST', 'MYSQLPORT', 'MYSQLUSER', 'MYSQLDATABASE',
+        'RAILWAY_ENVIRONMENT', 'PORT'
+    ]
+    for var in env_vars_to_check:
+        value = os.environ.get(var)
+        if value and 'PASSWORD' not in var:
+            print(f"✅ {var}: {value[:50]}...")
+        elif value:
+            print(f"✅ {var}: [HIDDEN]")
+        else:
+            print(f"❌ {var}: Not found")
+    print("=" * 60)
     
     if database_url:
         # Railway MySQL URL formatını düzelt

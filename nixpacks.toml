@@ -2,10 +2,10 @@
 nixPkgs = ['python39', 'gcc', 'pkg-config', 'mysql', 'bash']
 
 [phases.install]
-cmds = ['pip install --upgrade pip', 'pip install -r requirements.txt']
+cmds = ['python3.9 -m pip install --upgrade pip', 'python3.9 -m pip install -r requirements.txt']
 
 [phases.build]
-cmds = ['python -c "print(\"✅ Build completed\")"']
+cmds = ['python3.9 -c "print(\"✅ Build completed\")"']
 
 [start]
 cmd = 'bash start.sh'

@@ -5,7 +5,7 @@ echo "🚀 Railway deployment başlatılıyor..."
 
 # Veritabanını başlat
 echo "📊 Veritabanı kontrol ediliyor..."
-python3.9 init_railway_db.py
+python init_railway_db.py
 
 # Exit kodunu kontrol et
 if [ $? -eq 0 ]; then

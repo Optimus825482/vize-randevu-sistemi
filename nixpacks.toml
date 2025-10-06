@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['bash', 'gcc', 'pkg-config', 'mysql']
+nixPkgs = ['python39', 'python39Packages.pip', 'python39Packages.virtualenv', 'bash', 'gcc', 'pkg-config', 'mysql']
 
 [start]
 cmd = 'bash start.sh'

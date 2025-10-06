@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Yönetim Paneli{% endblock %}
+
+{% block content %}
+<div class="space-y-6 sm:space-y-8 lg:space-y-10">
+    <section class="mobile-stack sm:grid sm:gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] sm:items-start">
+        <div
+            class="rounded-2xl sm:rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6 lg:p-8 shadow-2xl">
+            <p class="text-[9px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.4em] text-slate-500">Yönetim
+                Paneli</p>
+            <h1
+                class="mt-3 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-3 text-lg sm:text-2xl lg:text-3xl font-semibold text-white">
+                <i class="bi bi-speedometer2 text-emerald-400 text-base sm:text-2xl"></i>
+                <span class="break-words">Operasyon Kontrol Merkezi</span>
+            </h1>
+            <p class="mt-2 sm:mt-3 max-w-2xl text-xs sm:text-sm text-slate-400">
+                Randevu süreçleri, kullanıcı etkinlikleri ve ülke bazlı performans tek ekranda. Günlük kararlarınızı
+                desteklemek için en kritik göstergeler burada toplanır.
+            </p>
+
+            <div class="mt-6 sm:mt-8 lg:mt-10 grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+                <div class="rounded-xl sm:rounded-2xl border border-slate-800/80 bg-slate-950/70 p-3 sm:p-4 lg:p-5">
+                    <p
+                        class="text-[9px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-500 truncate">
+                        Toplam Kullanıcı</p>
+                    <p class="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-semibold text-white">{{
+                        stats.total_users }}</p>
+                </div>
+                <div class="rounded-xl sm:rounded-2xl border border-slate-800/80 bg-slate-950/70 p-3 sm:p-4 lg:p-5">
+                    <p
+                        class="text-[9px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-500 truncate">
+                        Aktif Dosya</p>
+                    <p class="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-semibold text-white">{{
+                        stats.total_appointments }}</p>
+                </div>
+                <div
+                    class="rounded-xl sm:rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 sm:p-4 lg:p-5 col-span-2 sm:col-span-1">
+                    <p
+                        class="text-[9px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-emerald-200">
+                        Tamamlanan</p>
+                    <p class="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-semibold text-emerald-100">{{
+                        stats.completed }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-3 sm:space-y-4">
+            <div class="rounded-2xl sm:rounded-3xl border border-slate-800/70 bg-slate-950/70 p-4 sm:p-6">
+                <p class="text-xs sm:text-sm font-semibold text-slate-300">Bugünün Özeti</p>
+                <dl class="mt-4 sm:mt-6 space-y-3 sm:space-y-4 text-xs sm:text-sm text-slate-400">
+                    <div
+                        class="flex items-start justify-between gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
+                        <dt class="flex items-center gap-3 text-slate-300">
+                            <i class="bi bi-clock-history text-lg text-amber-300"></i>
+                            Bekleyen Dosyalar
+                        </dt>
+                        <dd class="text-base font-semibold text-amber-200">{{ stats.waiting }}</dd>
+                    </div>
+                    <div
+                        class="flex items-start justify-between gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
+                        <dt class="flex flex-col gap-1 text-slate-300">
+                            <span class="flex items-center gap-3">
+                                <i class="bi bi-graph-up text-lg text-emerald-300"></i>
+                                Dönüşüm Oranı
+                            </span>
+                            <span class="text-xs text-slate-500">Tamamlanan başvuruların toplam başvurulara oranı</span>
+                        </dt>
+                        <dd class="text-base font-semibold text-emerald-200">
+                            {% if stats.total_appointments > 0 %}
+                            {{ (stats.completed / stats.total_appointments * 100)|round(1) }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div
+                        class="flex items-start justify-between gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
+                        <dt class="flex items-center gap-3 text-slate-300">
+                            <i class="bi bi-shield-exclamation text-lg text-red-300"></i>
+                            İptal Edilenler
+                        </dt>
+                        <dd class="text-base font-semibold text-red-200">{{ stats.cancelled }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <a href="{{ url_for('admin_requests') }}"
+                class="block rounded-3xl border border-slate-800/70 bg-slate-950/70 p-6 hover:border-amber-500/40 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.28em] text-slate-500">Bekleyen Talepler</p>
+                        <p class="mt-3 text-3xl font-semibold text-amber-300">{{ pending_requests }}</p>
+                        <p class="mt-2 text-sm text-slate-400">
+                            Danışmanlardan gelen güncelleme ve silme talepleri
+                        </p>
+                    </div>
+                    <i class="bi bi-arrow-right-circle text-3xl text-amber-400"></i>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-4">
+        <article
+            class="rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
+            <div class="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-500">
+                <span>Kullanıcı Portföyü</span>
+                <i class="bi bi-people text-xl text-slate-300"></i>
+            </div>
+            <p class="mt-5 text-3xl font-semibold text-white">{{ stats.total_users }}</p>
+            <p class="mt-2 text-xs text-slate-500">Tüm aktif sistem kullanıcıları</p>
+        </article>
+        <article
+            class="rounded-3xl border border-slate-800/70 bg-gradient-to-br from-emerald-900/40 to-emerald-600/30 p-6">
+            <div class="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-emerald-200">
+                <span>Tamamlanan Dosyalar</span>
+                <i class="bi bi-check-circle text-xl text-emerald-200"></i>
+            </div>
+            <p class="mt-5 text-3xl font-semibold text-emerald-100">{{ stats.completed }}</p>
+            <p class="mt-2 text-xs text-emerald-200/70">Başarıyla sonuçlanan işlemler</p>
+        </article>
+        <article class="rounded-3xl border border-slate-800/70 bg-gradient-to-br from-amber-900/30 to-amber-600/20 p-6">
+            <div class="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-amber-200">
+                <span>Bekleyen İşlemler</span>
+                <i class="bi bi-clock-history text-xl text-amber-200"></i>
+            </div>
+            <p class="mt-5 text-3xl font-semibold text-amber-100">{{ stats.waiting }}</p>
+            <p class="mt-2 text-xs text-amber-200/70">İşlem sırası bekleyen talepler</p>
+        </article>
+        <article
+            class="rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-950 via-red-900/30 to-slate-950 p-6">
+            <div class="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-red-200">
+                <span>Toplam Başvuru</span>
+                <i class="bi bi-calendar-check text-xl text-red-200"></i>
+            </div>
+            <p class="mt-5 text-3xl font-semibold text-red-100">{{ stats.total_appointments }}</p>
+            <p class="mt-2 text-xs text-red-200/70">Tüm dönem toplamı</p>
+        </article>
+    </section>
+
+    <section>
+        <div class="rounded-3xl border border-slate-800/70 bg-slate-950/80">
+            <header class="flex items-center justify-between border-b border-slate-800/60 px-6 py-5">
+                <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <i class="bi bi-calendar-event text-lg text-emerald-300"></i>
+                    Son Randevu Talepleri
+                </h2>
+            </header>
+
+            {% if recent_appointments %}
+            <div class="overflow-hidden rounded-2xl border border-white/8 shadow-inner shadow-black/20">
+                <div class="overflow-x-auto">
+                    <table class="w-full sm:min-w-[640px] divide-y divide-slate-800 text-xs sm:text-sm text-slate-200">
+                        <thead
+                            class="bg-slate-950/80 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-500">
+                            <tr>
+                                <th class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left">ID</th>
+                                <th class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left">Kullanıcı</th>
+                                <th class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left">Başvuran</th>
+                                <th class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left">Ülke</th>
+                                <th class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left">Durum</th>
+                                <th class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left">Oluşturma</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70 bg-slate-950/60 text-sm text-slate-300">
+                            {% for apt in recent_appointments %}
+                            <tr class="transition hover:bg-slate-900/60">
+                                <td class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-semibold text-slate-200">
+                                    #{{ apt.id }}</td>
+                                <td class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-slate-300">{{
+                                    apt.user.username }}</td>
+                                <td class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-slate-300">{{
+                                    apt.applicant_name }} {{
+                                    apt.applicant_surname }}
+                                </td>
+                                <td class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-slate-200">
+                                    <span class="flex items-center gap-2 text-slate-200">
+                                        <img class="country-flag w-8 h-6 sm:w-10 sm:h-8 rounded border border-slate-700/50 object-cover flex-shrink-0"
+                                            data-country-code="{{ apt.country.code }}"
+                                            alt="{{ apt.country.name }} bayrağı" onerror="this.style.display='none'">
+                                        <span class="truncate max-w-[100px] sm:max-w-none">{{ apt.country.name }}</span>
+                                    </span>
+                                </td>
+                                <td class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+                                    {% if apt.status == 'Bekleme' %}
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">{{
+                                        apt.status }}</span>
+                                    {% elif apt.status == 'Süreç Başlatıldı' %}
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">{{
+                                        apt.status }}</span>
+                                    {% elif apt.status == 'Tamamlandı' %}
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">{{
+                                        apt.status }}</span>
+                                    {% else %}
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-red-500/25 px-3 py-1 text-xs font-semibold text-red-200">{{
+                                        apt.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-slate-400 text-[11px] sm:text-xs">
+                                    {{ apt.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center text-slate-500">
+                <i class="bi bi-inbox text-4xl text-slate-600"></i>
+                <p class="text-sm">Henüz randevu talebi oluşturulmamış.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ISO 3166-1 alpha-3 to alpha-2 conversion
+    const alpha3ToAlpha2 = {
+        'AFG': 'AF', 'ALB': 'AL', 'DZA': 'DZ', 'AND': 'AD', 'AGO': 'AO',
+        'ARG': 'AR', 'ARM': 'AM', 'AUS': 'AU', 'AUT': 'AT', 'AZE': 'AZ',
+        'BHR': 'BH', 'BGD': 'BD', 'BLR': 'BY', 'BEL': 'BE', 'BIH': 'BA',
+        'BRA': 'BR', 'BGR': 'BG', 'KHM': 'KH', 'CAN': 'CA', 'CHL': 'CL',
+        'CHN': 'CN', 'COL': 'CO', 'HRV': 'HR', 'CUB': 'CU', 'CYP': 'CY',
+        'CZE': 'CZ', 'DNK': 'DK', 'EGY': 'EG', 'EST': 'EE', 'ETH': 'ET',
+        'FIN': 'FI', 'FRA': 'FR', 'GEO': 'GE', 'DEU': 'DE', 'GRC': 'GR',
+        'HUN': 'HU', 'ISL': 'IS', 'IND': 'IN', 'IDN': 'ID', 'IRN': 'IR',
+        'IRQ': 'IQ', 'IRL': 'IE', 'ISR': 'IL', 'ITA': 'IT', 'JPN': 'JP',
+        'JOR': 'JO', 'KAZ': 'KZ', 'KWT': 'KW', 'KGZ': 'KG', 'LVA': 'LV',
+        'LBN': 'LB', 'LBY': 'LY', 'LTU': 'LT', 'LUX': 'LU', 'MKD': 'MK',
+        'MYS': 'MY', 'MLT': 'MT', 'MEX': 'MX', 'MDA': 'MD', 'MNG': 'MN',
+        'MNE': 'ME', 'MAR': 'MA', 'NLD': 'NL', 'NZL': 'NZ', 'NGA': 'NG',
+        'NOR': 'NO', 'OMN': 'OM', 'PAK': 'PK', 'PSE': 'PS', 'POL': 'PL',
+        'PRT': 'PT', 'QAT': 'QA', 'ROU': 'RO', 'RUS': 'RU', 'SAU': 'SA',
+        'SRB': 'RS', 'SGP': 'SG', 'SVK': 'SK', 'SVN': 'SI', 'ZAF': 'ZA',
+        'KOR': 'KR', 'ESP': 'ES', 'LKA': 'LK', 'SWE': 'SE', 'CHE': 'CH',
+        'SYR': 'SY', 'THA': 'TH', 'TUN': 'TN', 'TUR': 'TR', 'UKR': 'UA',
+        'ARE': 'AE', 'GBR': 'GB', 'USA': 'US', 'VNM': 'VN', 'YEM': 'YE'
+    };
+
+    document.addEventListener( 'DOMContentLoaded', function () {
+        // Load country flags
+        document.querySelectorAll( '.country-flag' ).forEach( img => {
+            const code = img.getAttribute( 'data-country-code' );
+            if ( code ) {
+                const alpha2 = alpha3ToAlpha2[code] || code.substring( 0, 2 );
+                img.src = `https://flagcdn.com/48x36/${alpha2.toLowerCase()}.png`;
+                img.srcset = `https://flagcdn.com/96x72/${alpha2.toLowerCase()}.png 2x`;
+            }
+        } );
+    } );
+</script>
+{% endblock %}

@@ -1,0 +1,752 @@
+{% extends 'base.html' %}
+{% block title %}Randevu Talepleri{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-slate-100">Randevu Talepleri</h1>
+            <p class="text-sm text-slate-400">Başvuruları filtreleyin, durumları yönetin ve ilerlemeyi takip edin.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <a href="{{ url_for('dashboard') }}"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm font-medium text-slate-200 shadow-sm hover:bg-slate-700/70 focus:outline-none focus:ring-2 focus:ring-slate-600 focus:ring-offset-2 focus:ring-offset-slate-900">
+                <i class="bi bi-arrow-left"></i>
+                <span>Panoya Dön</span>
+            </a>
+            <button type="button" id="resetFilters"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm font-medium text-slate-200 shadow-sm hover:bg-slate-700/60 focus:outline-none focus:ring-2 focus:ring-slate-600 focus:ring-offset-2 focus:ring-offset-slate-900">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>Filtreleri Sıfırla</span>
+            </button>
+        </div>
+    </div>
+
+    <form method="get"
+        class="grid grid-cols-1 gap-4 rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-lg xl:grid-cols-12 xl:gap-6">
+        <div class="xl:col-span-4">
+            <label for="q" class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Arama</label>
+            <div class="relative">
+                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input id="q" name="q" type="search" value="{{ filters.q }}"
+                    placeholder="Ad, soyad, pasaport, kullanıcı..."
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/70 pl-9 pr-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+            </div>
+        </div>
+
+        <div class="xl:col-span-2">
+            <label for="status"
+                class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Durum</label>
+            <select id="status" name="status"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="all" {{ 'selected' if filters.status=='all' }}>Tümü</option>
+                {% for status_option in status_options %}
+                <option value="{{ status_option }}" {{ 'selected' if filters.status==status_option }}>{{ status_option
+                    }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="xl:col-span-2">
+            <label for="country_id"
+                class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Ülke</label>
+            <select id="country_id" name="country_id"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="">Tümü</option>
+                {% for country in countries %}
+                <option value="{{ country.id }}" {{ 'selected' if filters.country_id|int==country.id }}> {{ country.name
+                    }} </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="xl:col-span-2">
+            <label for="user_id"
+                class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Danışman</label>
+            <select id="user_id" name="user_id"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="">Tümü</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {{ 'selected' if filters.user_id|int==user.id }}>{{ user.full_name }} ({{
+                    'Admin' if user.is_admin else 'Danışman' }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="xl:col-span-2">
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Tarih
+                (Başlangıç)</label>
+            <input type="date" name="date_from" value="{{ filters.date_from }}"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+        </div>
+
+        <div class="xl:col-span-2">
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Tarih (Bitiş)</label>
+            <input type="date" name="date_to" value="{{ filters.date_to }}"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+        </div>
+
+        <div class="xl:col-span-2">
+            <label for="sort"
+                class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Sıralama</label>
+            <select id="sort" name="sort"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="newest" {{ 'selected' if filters.sort=='newest' }}>En Yeni Başvurular</option>
+                <option value="oldest" {{ 'selected' if filters.sort=='oldest' }}>En Eski Başvurular</option>
+                <option value="updated" {{ 'selected' if filters.sort=='updated' }}>Son Güncellenenler</option>
+                <option value="preferred" {{ 'selected' if filters.sort=='preferred' }}>Tercih Edilen Tarih</option>
+            </select>
+        </div>
+
+        <div class="xl:col-span-2">
+            <label for="per_page" class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Sayfa
+                Boyutu</label>
+            <select id="per_page" name="per_page"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                {% for choice in per_page_choices %}
+                <option value="{{ choice }}" {{ 'selected' if filters.per_page==choice }}>{{ choice }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="xl:col-span-2 flex items-end">
+            <button type="submit"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900">
+                <i class="bi bi-funnel"></i>
+                <span>Filtrele</span>
+            </button>
+        </div>
+    </form>
+
+    <div class="grid gap-3 grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {% set total_appointments = appointments.total %}
+        <div class="rounded-xl border border-slate-800/70 bg-slate-900/80 p-3 sm:p-4">
+            <p class="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 truncate">Toplam</p>
+            <p class="mt-1 sm:mt-2 text-xl sm:text-2xl font-semibold text-slate-100">{{ total_appointments }}</p>
+            <p class="text-[10px] sm:text-xs text-slate-500 leading-tight">Filtrelere göre bulunan</p>
+        </div>
+        {% for status_option in status_options %}
+        <div class="rounded-xl border border-slate-800/70 bg-slate-900/80 p-3 sm:p-4">
+            <p class="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 truncate">{{ status_option }}</p>
+            <p class="mt-1 sm:mt-2 text-xl sm:text-2xl font-semibold text-slate-100">{{ status_counts.get(status_option,
+                0) }}</p>
+            <p class="text-[10px] sm:text-xs text-slate-500 leading-tight">Bu durumdaki başvuru</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-slate-800/80 bg-slate-900/70 shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-slate-800">
+                <thead class="bg-slate-900">
+                    <tr class="text-[10px] sm:text-xs uppercase tracking-[0.15em] sm:tracking-wide text-slate-400">
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[20%] min-w-[140px]">Başvuru Sahibi</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[12%] min-w-[100px]">Pasaport</th>
+                        <th scope="col"
+                            class="px-2 sm:px-3 py-2.5 text-left hidden lg:table-cell w-[15%] min-w-[120px]">
+                            Ülke</th>
+                        <th scope="col"
+                            class="px-2 sm:px-3 py-2.5 text-left hidden xl:table-cell w-[13%] min-w-[110px]">
+                            Danışman</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[15%] min-w-[110px]">Durum</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left hidden lg:table-cell w-[10%] min-w-[90px]">
+                            Oluşturulma</th>
+                        <th scope="col"
+                            class="px-2 sm:px-3 py-2.5 text-left hidden 2xl:table-cell w-[10%] min-w-[90px]">
+                            Güncellenme</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[15%] min-w-[130px]">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80 text-[11px] sm:text-xs">
+                    {% if appointments.items %}
+                    {% for appointment in appointments.items %}
+                    <tr class="hover:bg-slate-800/60">
+                        <td class="px-2 sm:px-3 py-2.5">
+                            <div class="font-medium text-slate-100 truncate">{{ appointment.applicant_name }} {{
+                                appointment.applicant_surname }}</div>
+                            <div class="text-[10px] text-slate-500 truncate lg:hidden">Tel: {{ appointment.phone or '—'
+                                }}</div>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5 text-slate-200 truncate">{{ appointment.passport_number
+                            or '—' }}</td>
+                        <td class="px-2 sm:px-3 py-2.5 hidden lg:table-cell">
+                            <div class="flex items-center gap-1.5">
+                                <img class="country-flag w-6 h-5 rounded border border-slate-700/50 object-cover flex-shrink-0"
+                                    data-country-code="{{ appointment.country.code }}"
+                                    alt="{{ appointment.country.name }} bayrağı" onerror="this.style.display='none'">
+                                <div class="truncate">
+                                    <div class="text-slate-100 truncate">{{ appointment.country.name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5 hidden xl:table-cell">
+                            <div class="text-slate-100 truncate">{{ appointment.user.full_name }}</div>
+                            <div class="text-[10px] text-slate-500 truncate">{{ appointment.user.username }}</div>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5">
+                            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap
+                  {% if appointment.status == 'Tamamlandı' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                  {% elif appointment.status == 'İptal' %}bg-rose-500/15 text-rose-300 border border-rose-500/40
+                  {% elif appointment.status == 'Süreç Başlatıldı' %}bg-amber-500/20 text-amber-200 border border-amber-500/40
+                  {% else %}bg-indigo-500/15 text-indigo-200 border border-indigo-500/40{% endif %}">
+                                <i class="bi bi-circle-fill text-[6px]"></i>
+                                <span class="hidden sm:inline">{{ appointment.status }}</span>
+                                <span class="sm:hidden">{{ appointment.status[:8] }}</span>
+                            </span>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5 text-slate-300 whitespace-nowrap hidden lg:table-cell">{{
+                            appointment.created_at.strftime('%d.%m.%y') }}<br class="hidden xl:inline">
+                            <span class="text-[10px] text-slate-500 hidden xl:inline">{{
+                                appointment.created_at.strftime('%H:%M') }}</span>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5 text-slate-300 whitespace-nowrap hidden 2xl:table-cell">{{
+                            appointment.updated_at.strftime('%d.%m.%y') }}<br>
+                            <span class="text-[10px] text-slate-500">{{ appointment.updated_at.strftime('%H:%M')
+                                }}</span>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5">
+                            <div class="flex flex-col xl:flex-row items-start xl:items-center gap-1.5">
+                                <button type="button" onclick="viewAppointmentDetails({{ appointment.id }})"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-2.5 py-1.5 text-xs font-medium text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/40"
+                                    title="Detay">
+                                    <i class="bi bi-eye text-sm"></i>
+                                    <span class="hidden 2xl:inline">Detay</span>
+                                </button>
+                                <button type="button" onclick="updateAppointmentStatus({{ appointment.id }})"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/30 border border-amber-500/40"
+                                    title="Durum Güncelle">
+                                    <i class="bi bi-arrow-repeat text-sm"></i>
+                                    <span class="hidden 2xl:inline">Durum</span>
+                                </button>
+                                <button type="button" onclick="editAppointment({{ appointment.id }})"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-2.5 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40"
+                                    title="Düzenle">
+                                    <i class="bi bi-pencil text-sm"></i>
+                                    <span class="hidden 2xl:inline">Düzenle</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8"
+                            class="px-3 sm:px-4 py-8 sm:py-10 text-center text-slate-400 text-xs sm:text-sm">
+                            Filtrelere uygun randevu talebi bulunamadı.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if appointments.pages > 1 %}
+        <div
+            class="flex flex-col gap-3 border-t border-slate-800/70 bg-slate-900/80 p-4 md:flex-row md:items-center md:justify-between">
+            <p class="text-xs text-slate-400">Sayfa {{ appointments.page }} / {{ appointments.pages }} | Toplam {{
+                appointments.total }} kayıt</p>
+            <div class="flex items-center gap-2">
+                {% if appointments.has_prev %}
+                <a href="{{ url_for('admin_appointments', page=appointments.prev_num, **filters) }}"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-200 hover:bg-slate-700/60">
+                    <i class="bi bi-arrow-left"></i>
+                    <span class="ml-1">Önceki</span>
+                </a>
+                {% else %}
+                <span
+                    class="inline-flex items-center rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs text-slate-500">
+                    <i class="bi bi-arrow-left"></i>
+                    <span class="ml-1">Önceki</span>
+                </span>
+                {% endif %}
+
+                <span class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1 text-xs text-slate-300">Sayfa
+                    {{ appointments.page }}</span>
+
+                {% if appointments.has_next %}
+                <a href="{{ url_for('admin_appointments', page=appointments.next_num, **filters) }}"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-200 hover:bg-slate-700/60">
+                    <span class="mr-1">Sonraki</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                {% else %}
+                <span
+                    class="inline-flex items-center rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs text-slate-500">
+                    <span class="mr-1">Sonraki</span>
+                    <i class="bi bi-arrow-right"></i>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // ISO 3166-1 alpha-3 to alpha-2 dönüşümü
+    const alpha3ToAlpha2 = {
+        'USA': 'US', 'GBR': 'GB', 'DEU': 'DE', 'FRA': 'FR', 'ITA': 'IT', 'ESP': 'ES',
+        'CAN': 'CA', 'AUS': 'AU', 'JPN': 'JP', 'KOR': 'KR', 'CHN': 'CN', 'IND': 'IN',
+        'BRA': 'BR', 'MEX': 'MX', 'RUS': 'RU', 'TUR': 'TR', 'SAU': 'SA', 'ARE': 'AE',
+        'EGY': 'EG', 'ZAF': 'ZA', 'NGA': 'NG', 'ARG': 'AR', 'CHL': 'CL', 'COL': 'CO',
+        'PER': 'PE', 'NLD': 'NL', 'BEL': 'BE', 'CHE': 'CH', 'AUT': 'AT', 'SWE': 'SE',
+        'NOR': 'NO', 'DNK': 'DK', 'FIN': 'FI', 'POL': 'PL', 'CZE': 'CZ', 'HUN': 'HU',
+        'ROU': 'RO', 'BGR': 'BG', 'GRC': 'GR', 'PRT': 'PT', 'IRL': 'IE', 'ISL': 'IS',
+        'HRV': 'HR', 'SRB': 'RS', 'UKR': 'UA', 'SGP': 'SG', 'MYS': 'MY', 'THA': 'TH',
+        'VNM': 'VN', 'IDN': 'ID', 'PHL': 'PH', 'NZL': 'NZ', 'ISR': 'IL', 'PAK': 'PK',
+        'BGD': 'BD', 'IRN': 'IR', 'IRQ': 'IQ', 'KWT': 'KW', 'QAT': 'QA', 'OMN': 'OM',
+        'JOR': 'JO', 'LBN': 'LB', 'MAR': 'MA', 'DZA': 'DZ', 'TUN': 'TN', 'LBY': 'LY',
+        'KEN': 'KE', 'ETH': 'ET', 'GHA': 'GH'
+    };
+
+    document.addEventListener( 'DOMContentLoaded', () => {
+        // Bayrak görsellerini yükle
+        document.querySelectorAll( '.country-flag' ).forEach( img => {
+            const code = img.getAttribute( 'data-country-code' );
+            if ( code ) {
+                const alpha2 = alpha3ToAlpha2[code] || code.substring( 0, 2 );
+                img.src = `https://flagcdn.com/48x36/${alpha2.toLowerCase()}.png`;
+                img.srcset = `https://flagcdn.com/96x72/${alpha2.toLowerCase()}.png 2x`;
+            }
+        } );
+    } );
+
+    document.getElementById( 'resetFilters' )?.addEventListener( 'click', () => {
+        window.location.href = "{{ url_for('admin_appointments') }}";
+    } );
+
+    // Modal fonksiyonları
+    function viewAppointmentDetails( aptId ) {
+        fetch( `/admin/appointments/${aptId}/details` )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    showDetailsModal( data.appointment );
+                } else {
+                    alert( 'Hata: ' + data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Hata:', error );
+                alert( 'Randevu detayları yüklenirken bir hata oluştu.' );
+            } );
+    }
+
+    function updateAppointmentStatus( aptId ) {
+        fetch( `/admin/appointments/${aptId}/details` )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    showStatusModal( data.appointment );
+                } else {
+                    alert( 'Hata: ' + data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Hata:', error );
+                alert( 'Randevu detayları yüklenirken bir hata oluştu.' );
+            } );
+    }
+
+    function editAppointment( aptId ) {
+        fetch( `/admin/appointments/${aptId}/details` )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    showEditModal( data.appointment );
+                } else {
+                    alert( 'Hata: ' + data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Hata:', error );
+                alert( 'Randevu detayları yüklenirken bir hata oluştu.' );
+            } );
+    }
+
+    function showDetailsModal( appointment ) {
+        const modal = document.getElementById( 'detailsModal' );
+        document.getElementById( 'detailApplicantName' ).textContent = `${appointment.applicant_name} ${appointment.applicant_surname}`;
+        document.getElementById( 'detailPassport' ).textContent = appointment.passport_number || '—';
+        document.getElementById( 'detailBirthDate' ).textContent = appointment.birth_date || '—';
+        document.getElementById( 'detailPhone' ).textContent = appointment.phone || '—';
+        document.getElementById( 'detailEmail' ).textContent = appointment.email || '—';
+        document.getElementById( 'detailNationality' ).textContent = appointment.nationality || '—';
+        document.getElementById( 'detailPassportIssue' ).textContent = appointment.passport_issue_date || '—';
+        document.getElementById( 'detailPassportExpiry' ).textContent = appointment.passport_expiry_date || '—';
+        document.getElementById( 'detailTravelDate' ).textContent = appointment.travel_date || '—';
+        document.getElementById( 'detailAddress' ).textContent = appointment.address || '—';
+        document.getElementById( 'detailPreferredDate' ).textContent = appointment.preferred_date || '—';
+        document.getElementById( 'detailPreferredDateEnd' ).textContent = appointment.preferred_date_end || '—';
+        document.getElementById( 'detailVisaType' ).textContent = appointment.visa_type || '—';
+        document.getElementById( 'detailNotes' ).textContent = appointment.notes || '—';
+        document.getElementById( 'detailCountry' ).textContent = appointment.country.name;
+        document.getElementById( 'detailUser' ).textContent = `${appointment.user.full_name} (${appointment.user.username})`;
+        document.getElementById( 'detailStatus' ).textContent = appointment.status;
+        document.getElementById( 'detailCreatedAt' ).textContent = appointment.created_at;
+        document.getElementById( 'detailUpdatedAt' ).textContent = appointment.updated_at;
+        document.getElementById( 'detailProcessedAt' ).textContent = appointment.processed_at || '—';
+        modal.classList.remove( 'hidden' );
+    }
+
+    function showStatusModal( appointment ) {
+        const modal = document.getElementById( 'statusModal' );
+        document.getElementById( 'statusAptId' ).value = appointment.id;
+        document.getElementById( 'statusApplicantInfo' ).textContent = `${appointment.applicant_name} ${appointment.applicant_surname} - ${appointment.passport_number}`;
+        document.getElementById( 'statusSelect' ).value = appointment.status;
+        document.getElementById( 'statusAdminNote' ).value = '';
+        modal.classList.remove( 'hidden' );
+    }
+
+    function showEditModal( appointment ) {
+        const modal = document.getElementById( 'editModal' );
+        document.getElementById( 'editAptId' ).value = appointment.id;
+        document.getElementById( 'editApplicantName' ).value = appointment.applicant_name;
+        document.getElementById( 'editApplicantSurname' ).value = appointment.applicant_surname;
+        document.getElementById( 'editPassportNumber' ).value = appointment.passport_number;
+        document.getElementById( 'editBirthDate' ).value = appointment.birth_date ? appointment.birth_date.split( '.' ).reverse().join( '-' ) : '';
+        document.getElementById( 'editPhone' ).value = appointment.phone || '';
+        document.getElementById( 'editEmail' ).value = appointment.email || '';
+        document.getElementById( 'editNationality' ).value = appointment.nationality || '';
+        document.getElementById( 'editPassportIssueDate' ).value = appointment.passport_issue_date ? appointment.passport_issue_date.split( '.' ).reverse().join( '-' ) : '';
+        document.getElementById( 'editPassportExpiryDate' ).value = appointment.passport_expiry_date ? appointment.passport_expiry_date.split( '.' ).reverse().join( '-' ) : '';
+        document.getElementById( 'editTravelDate' ).value = appointment.travel_date ? appointment.travel_date.split( '.' ).reverse().join( '-' ) : '';
+        document.getElementById( 'editAddress' ).value = appointment.address || '';
+        document.getElementById( 'editPreferredDate' ).value = appointment.preferred_date || '';
+        document.getElementById( 'editPreferredDateEnd' ).value = appointment.preferred_date_end || '';
+        document.getElementById( 'editVisaType' ).value = appointment.visa_type || '';
+        document.getElementById( 'editNotes' ).value = appointment.notes || '';
+        modal.classList.remove( 'hidden' );
+    }
+
+    function closeModal( modalId ) {
+        document.getElementById( modalId ).classList.add( 'hidden' );
+    }
+
+    function submitStatusUpdate() {
+        const aptId = document.getElementById( 'statusAptId' ).value;
+        const status = document.getElementById( 'statusSelect' ).value;
+        const adminNote = document.getElementById( 'statusAdminNote' ).value;
+
+        const formData = new FormData();
+        formData.append( 'status', status );
+        formData.append( 'admin_note', adminNote );
+
+        fetch( `/admin/appointments/${aptId}/update-status`, {
+            method: 'POST',
+            body: formData
+        } )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    alert( data.message );
+                    closeModal( 'statusModal' );
+                    location.reload();
+                } else {
+                    alert( 'Hata: ' + data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Hata:', error );
+                alert( 'Durum güncellenirken bir hata oluştu.' );
+            } );
+    }
+
+    function submitEdit() {
+        const aptId = document.getElementById( 'editAptId' ).value;
+        const formData = new FormData();
+
+        formData.append( 'applicant_name', document.getElementById( 'editApplicantName' ).value );
+        formData.append( 'applicant_surname', document.getElementById( 'editApplicantSurname' ).value );
+        formData.append( 'passport_number', document.getElementById( 'editPassportNumber' ).value );
+        formData.append( 'birth_date', document.getElementById( 'editBirthDate' ).value );
+        formData.append( 'phone', document.getElementById( 'editPhone' ).value );
+        formData.append( 'email', document.getElementById( 'editEmail' ).value );
+        formData.append( 'nationality', document.getElementById( 'editNationality' ).value );
+        formData.append( 'passport_issue_date', document.getElementById( 'editPassportIssueDate' ).value );
+        formData.append( 'passport_expiry_date', document.getElementById( 'editPassportExpiryDate' ).value );
+        formData.append( 'travel_date', document.getElementById( 'editTravelDate' ).value );
+        formData.append( 'address', document.getElementById( 'editAddress' ).value );
+        formData.append( 'preferred_date', document.getElementById( 'editPreferredDate' ).value );
+        formData.append( 'preferred_date_end', document.getElementById( 'editPreferredDateEnd' ).value );
+        formData.append( 'visa_type', document.getElementById( 'editVisaType' ).value );
+        formData.append( 'notes', document.getElementById( 'editNotes' ).value );
+
+        fetch( `/admin/appointments/${aptId}/update`, {
+            method: 'POST',
+            body: formData
+        } )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    alert( data.message );
+                    closeModal( 'editModal' );
+                    location.reload();
+                } else {
+                    alert( 'Hata: ' + data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Hata:', error );
+                alert( 'Randevu güncellenirken bir hata oluştu.' );
+            } );
+    }
+</script>
+
+<!-- Detay Modal -->
+<div id="detailsModal"
+    class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div
+        class="bg-slate-900 rounded-xl border border-slate-800 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-slate-100">Randevu Detayları</h3>
+            <button onclick="closeModal('detailsModal')" class="text-slate-400 hover:text-slate-200">
+                <i class="bi bi-x-lg text-2xl"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Başvuran</label>
+                    <p id="detailApplicantName" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Pasaport No</label>
+                    <p id="detailPassport" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Doğum Tarihi</label>
+                    <p id="detailBirthDate" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Telefon</label>
+                    <p id="detailPhone" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">E-posta</label>
+                    <p id="detailEmail" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Uyruk</label>
+                    <p id="detailNationality" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Pasaport Veriliş</label>
+                    <p id="detailPassportIssue" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Pasaport Bitiş</label>
+                    <p id="detailPassportExpiry" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Seyahat Tarihi</label>
+                    <p id="detailTravelDate" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Vize Türü</label>
+                    <p id="detailVisaType" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Tercih Edilen Tarih</label>
+                    <p id="detailPreferredDate" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Tarih Aralığı Sonu</label>
+                    <p id="detailPreferredDateEnd" class="text-slate-100 mt-1"></p>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-medium text-slate-400 uppercase">Adres</label>
+                    <p id="detailAddress" class="text-slate-100 mt-1"></p>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-medium text-slate-400 uppercase">Notlar</label>
+                    <p id="detailNotes" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Ülke</label>
+                    <p id="detailCountry" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Danışman</label>
+                    <p id="detailUser" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Durum</label>
+                    <p id="detailStatus" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Oluşturulma</label>
+                    <p id="detailCreatedAt" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Güncellenme</label>
+                    <p id="detailUpdatedAt" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase">İşlenme</label>
+                    <p id="detailProcessedAt" class="text-slate-100 mt-1"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Durum Güncelleme Modal -->
+<div id="statusModal"
+    class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-2xl w-full max-w-md">
+        <div class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-slate-100">Durum Güncelle</h3>
+            <button onclick="closeModal('statusModal')" class="text-slate-400 hover:text-slate-200">
+                <i class="bi bi-x-lg text-2xl"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="statusAptId">
+            <div>
+                <label class="text-xs font-medium text-slate-400 uppercase">Başvuran</label>
+                <p id="statusApplicantInfo" class="text-slate-100 mt-1"></p>
+            </div>
+            <div>
+                <label for="statusSelect" class="block text-sm font-medium text-slate-300 mb-2">Yeni Durum</label>
+                <select id="statusSelect"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                    <option value="Bekleme">Bekleme</option>
+                    <option value="Süreç Başlatıldı">Süreç Başlatıldı</option>
+                    <option value="Tamamlandı">Tamamlandı</option>
+                    <option value="İptal">İptal</option>
+                </select>
+            </div>
+            <div>
+                <label for="statusAdminNote" class="block text-sm font-medium text-slate-300 mb-2">Admin Notu
+                    (Opsiyonel)</label>
+                <textarea id="statusAdminNote" rows="3"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100"
+                    placeholder="Durum değişikliği hakkında not..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button onclick="submitStatusUpdate()"
+                    class="flex-1 bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-lg font-medium">
+                    Güncelle
+                </button>
+                <button onclick="closeModal('statusModal')"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg font-medium">
+                    İptal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Düzenleme Modal -->
+<div id="editModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div
+        class="bg-slate-900 rounded-xl border border-slate-800 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-slate-100">Randevu Düzenle</h3>
+            <button onclick="closeModal('editModal')" class="text-slate-400 hover:text-slate-200">
+                <i class="bi bi-x-lg text-2xl"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="editAptId">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="editApplicantName" class="block text-sm font-medium text-slate-300 mb-2">Ad *</label>
+                    <input type="text" id="editApplicantName" required
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editApplicantSurname" class="block text-sm font-medium text-slate-300 mb-2">Soyad
+                        *</label>
+                    <input type="text" id="editApplicantSurname" required
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editPassportNumber" class="block text-sm font-medium text-slate-300 mb-2">Pasaport No
+                        *</label>
+                    <input type="text" id="editPassportNumber" required
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editBirthDate" class="block text-sm font-medium text-slate-300 mb-2">Doğum
+                        Tarihi</label>
+                    <input type="date" id="editBirthDate"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editPhone" class="block text-sm font-medium text-slate-300 mb-2">Telefon</label>
+                    <input type="tel" id="editPhone"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editEmail" class="block text-sm font-medium text-slate-300 mb-2">E-posta</label>
+                    <input type="email" id="editEmail"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editNationality" class="block text-sm font-medium text-slate-300 mb-2">Uyruk</label>
+                    <input type="text" id="editNationality"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editPassportIssueDate" class="block text-sm font-medium text-slate-300 mb-2">Pasaport
+                        Veriliş</label>
+                    <input type="date" id="editPassportIssueDate"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editPassportExpiryDate" class="block text-sm font-medium text-slate-300 mb-2">Pasaport
+                        Bitiş</label>
+                    <input type="date" id="editPassportExpiryDate"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editTravelDate" class="block text-sm font-medium text-slate-300 mb-2">Seyahat
+                        Tarihi</label>
+                    <input type="date" id="editTravelDate"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editPreferredDate" class="block text-sm font-medium text-slate-300 mb-2">Tercih Edilen
+                        Tarih</label>
+                    <input type="date" id="editPreferredDate"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editPreferredDateEnd" class="block text-sm font-medium text-slate-300 mb-2">Tarih
+                        Aralığı Sonu</label>
+                    <input type="date" id="editPreferredDateEnd"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div>
+                    <label for="editVisaType" class="block text-sm font-medium text-slate-300 mb-2">Vize Türü</label>
+                    <input type="text" id="editVisaType"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="editAddress" class="block text-sm font-medium text-slate-300 mb-2">Adres</label>
+                    <textarea id="editAddress" rows="2"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100"></textarea>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="editNotes" class="block text-sm font-medium text-slate-300 mb-2">Notlar</label>
+                    <textarea id="editNotes" rows="3"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button onclick="submitEdit()"
+                    class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg font-medium">
+                    Kaydet
+                </button>
+                <button onclick="closeModal('editModal')"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg font-medium">
+                    İptal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

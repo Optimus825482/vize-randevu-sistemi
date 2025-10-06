@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>{% block title %}VIZAL - Vize Randevu Talep Sistemi{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/vizal_logo_darkbg.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon"
+        href="{{ url_for('static', filename='images/vizal_logo_darkbg.ico') }}">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                container: {
+                    center: true,
+                    padding: {
+                        DEFAULT: '1rem',
+                        sm: '1.5rem',
+                        lg: '2rem',
+                        xl: '2.5rem'
+                    }
+                },
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5f5',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a'
+                        }
+                    },
+                    backgroundImage: {
+                        'grid-slate': 'linear-gradient(to right, rgba(148, 163, 184, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.06) 1px, transparent 1px)',
+                        'radial-emerald': 'radial-gradient(circle at top, rgba(16, 185, 129, 0.14), transparent 60%)',
+                        'radial-sky': 'radial-gradient(circle at bottom, rgba(56, 189, 248, 0.12), transparent 65%)'
+                    },
+                    boxShadow: {
+                        'floating': '0 18px 45px -25px rgba(15, 118, 110, 0.55)'
+                    },
+                    borderRadius: {
+                        'xl2': '1.25rem'
+                    }
+                }
+            }
+        };
+        if ( !document.documentElement.classList.contains( 'dark' ) ) {
+            document.documentElement.classList.add( 'dark' );
+        }
+    </script>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Custom Theme Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .animate-slideInRight {
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .animate-slideOutRight {
+            animation: slideOutRight 0.3s ease-in;
+        }
+
+        #toast-container {
+            animation: fadeIn 0.2s ease-out;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="relative min-h-screen overflow-x-hidden bg-slate-950 font-sans text-slate-100 antialiased">
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute inset-0 bg-grid-slate [background-size:48px_48px] opacity-40"></div>
+        <div class="absolute inset-0 bg-radial-emerald opacity-70"></div>
+        <div class="absolute inset-0 bg-radial-sky opacity-60"></div>
+        <div class="absolute inset-x-0 top-[-22%] h-[280px] bg-brand-500/20 blur-[180px]"></div>
+    </div>
+    {% if current_user.is_authenticated %}
+    <div class="relative flex min-h-screen">
+        <div id="sidebarOverlay"
+            class="fixed inset-0 z-40 hidden bg-slate-950/75 backdrop-blur-sm transition-opacity duration-300 lg:hidden">
+        </div>
+
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-50 flex w-full max-w-xs transform flex-col justify-between overflow-y-auto border-r border-white/5 bg-slate-950 px-5 pb-6 pt-8 shadow-[0_30px_60px_-40px_rgba(15,118,110,0.8)] ring-1 ring-white/5 transition-transform duration-300 -translate-x-full lg:static lg:w-80 lg:flex-shrink-0 lg:translate-x-0 lg:border-r lg:px-6 lg:pb-8 lg:pt-10">
+            <div class="flex flex-col gap-8">
+                <div class="flex items-center justify-between gap-3">
+                    <a href="{{ url_for('dashboard') }}"
+                        class="group flex flex-1 items-center gap-3 lg:rounded-2xl lg:border lg:border-white/5 lg:bg-slate-900/60 lg:px-4 lg:py-3 transition lg:hover:border-emerald-400/40 lg:hover:bg-slate-900 lg:justify-start justify-center">
+                        <img src="{{ url_for('static', filename='images/vızal_logo.png') }}" alt="VIZAL Logo"
+                            class="h-12 w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-xl object-contain">
+                        <div class="flex-1 min-w-0 hidden lg:block">
+                            <p class="text-xl font-bold text-emerald-300 tracking-wider">VIZAL</p>
+                            <p class="text-[9px] uppercase tracking-[0.28em] text-slate-400 mt-0.5">Profesyonel.
+                                Dinamik. Güvenilir</p>
+                        </div>
+                    </a>
+                    <button id="sidebarClose"
+                        class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-white/5 bg-slate-900/60 text-slate-400 transition hover:text-slate-100 lg:hidden"
+                        aria-label="Menüyü kapat">
+                        <i class="bi bi-x-lg text-xl"></i>
+                    </button>
+                </div>
+
+                <nav class="space-y-1 text-sm font-medium text-slate-400">
+                    <p class="px-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">Genel</p>
+                    <a href="{{ url_for('dashboard') }}"
+                        class="sidebar-link {% if request.endpoint == 'dashboard' %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-speedometer2"></i>
+                        </span>
+                        <span>Panel</span>
+                    </a>
+
+                    {% if current_user.is_admin %}
+                    <p class="mt-6 px-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">Yönetim</p>
+                    <a href="{{ url_for('admin_users') }}"
+                        class="sidebar-link {% if request.endpoint in ['admin_users', 'admin_user_create', 'admin_user_edit'] %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-people"></i>
+                        </span>
+                        <span>Kullanıcılar</span>
+                    </a>
+                    <a href="{{ url_for('admin_appointments') }}"
+                        class="sidebar-link {% if request.endpoint == 'admin_appointments' %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-calendar-week"></i>
+                        </span>
+                        <span>Randevular</span>
+                    </a>
+                    <a href="{{ url_for('admin_requests') }}"
+                        class="sidebar-link {% if request.endpoint in ['admin_requests'] %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-inbox"></i>
+                        </span>
+                        <span>Talepler</span>
+                    </a>
+                    <a href="{{ url_for('admin_countries') }}"
+                        class="sidebar-link {% if request.endpoint in ['admin_countries', 'admin_country_create', 'admin_country_edit'] %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-flag"></i>
+                        </span>
+                        <span>Ülkeler</span>
+                    </a>
+                    <a href="{{ url_for('admin_logs') }}"
+                        class="sidebar-link {% if request.endpoint == 'admin_logs' %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-clock-history"></i>
+                        </span>
+                        <span>Sistem Logları</span>
+                    </a>
+                    {% endif %}
+
+                    {% if not current_user.is_admin %}
+                    <p class="mt-6 px-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">Danışman</p>
+                    <a href="{{ url_for('user_appointments') }}"
+                        class="sidebar-link {% if request.endpoint in ['user_appointments', 'user_appointments_by_country', 'user_appointment_edit', 'user_appointment_update_request'] %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-calendar-week"></i>
+                        </span>
+                        <span>Randevularım</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+
+            <div class="rounded-2xl border border-white/5 bg-slate-900/60 p-5 text-sm text-slate-300 shadow-inner">
+                <p class="font-semibold text-slate-100">Destek</p>
+                <p class="mt-2 text-xs leading-relaxed text-slate-500">Sistemle ilgili destek almak için yöneticinizle
+                    iletişime geçin.</p>
+            </div>
+        </aside>
+
+        <div class="flex flex-1 flex-col lg:pl-0">
+            <header data-header
+                class="sticky top-0 z-30 border-b border-slate-800/70 bg-slate-950/80 backdrop-blur-sm transition duration-300">
+                <div class="flex items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-5 sm:py-4 lg:px-8">
+                    <div class="flex min-w-0 flex-1 items-center gap-3">
+                        <button id="sidebarToggle"
+                            class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-200 lg:hidden"
+                            aria-label="Menüyü aç">
+                            <i class="bi bi-list text-xl"></i>
+                        </button>
+                        <div class="min-w-0 flex-1">
+                            <h2 class="truncate text-base font-semibold text-slate-100 sm:text-lg">{{ self.title()
+                                }}</h2>
+                        </div>
+                    </div>
+                    <div class="flex flex-shrink-0 items-center gap-2 sm:gap-3 lg:gap-5">
+                        <div class="hidden text-right text-sm xl:block">
+                            <p class="max-w-[160px] truncate font-medium text-slate-100">{{ current_user.full_name }}
+                            </p>
+                            <p class="max-w-[160px] truncate text-xs text-slate-500">{{ current_user.username }}</p>
+                        </div>
+                        <div
+                            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-slate-200">
+                            <i class="bi bi-person text-base"></i>
+                        </div>
+                        <a href="{{ url_for('logout') }}"
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-emerald-500/40 hover:text-emerald-100 sm:px-4 sm:text-sm">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="hidden sm:inline">Çıkış</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <main data-scroll-area class="flex-1 overflow-y-auto overflow-x-hidden pb-28">
+                <div class="mx-auto w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+                    <div id="flash-container" class="mb-6 space-y-3">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div
+                            class="flash-message flex items-start gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/80 px-4 py-3 text-sm text-slate-200 shadow-md shadow-black/20">
+                            <div
+                                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-xl">
+                                {% if category == 'success' %}
+                                <i class="bi bi-check-circle-fill text-emerald-400"></i>
+                                {% elif category == 'danger' %}
+                                <i class="bi bi-x-circle-fill text-red-400"></i>
+                                {% elif category == 'warning' %}
+                                <i class="bi bi-exclamation-triangle-fill text-amber-300"></i>
+                                {% else %}
+                                <i class="bi bi-info-circle-fill text-sky-300"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 pt-1">
+                                <p class="font-medium text-slate-100">{{ message }}</p>
+                            </div>
+                            <button type="button"
+                                class="inline-flex items-center justify-center rounded-xl border border-transparent bg-slate-900 px-2 py-1 text-xs text-slate-500 transition hover:text-slate-200"
+                                onclick="this.closest('.flash-message')?.remove()">
+                                <span>Kapat</span>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <div class="space-y-10">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </main>
+
+            <footer class="border-t border-slate-800/70 bg-slate-950/80">
+                <div class="mx-auto w-full max-w-7xl px-4 py-6 text-center sm:px-6 lg:px-8">
+                    <p class="text-sm font-semibold text-emerald-300">VIZAL</p>
+                    <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Profesyonel. Dinamik. Güvenilir
+                    </p>
+                    <p class="text-xs text-slate-600 mt-3">© 2025 Tüm hakları saklıdır.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <nav id="mobileDock" class="lg:hidden">
+        <div class="fixed inset-x-4 bottom-4 z-40">
+            <div
+                class="flex items-center justify-around gap-2 rounded-3xl border border-slate-800/80 bg-slate-950/90 px-3 py-2 shadow-[0_18px_40px_-22px_rgba(8,47,73,0.8)] backdrop-blur-xl">
+                <a href="{{ url_for('dashboard') }}"
+                    class="mobile-dock-link {% if request.endpoint == 'dashboard' %}is-active{% endif %}">
+                    <span class="mobile-dock-link__icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </span>
+                    <span>Özet</span>
+                </a>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin_users') }}"
+                    class="mobile-dock-link {% if request.endpoint in ['admin_users', 'admin_user_create', 'admin_user_edit'] %}is-active{% endif %}">
+                    <span class="mobile-dock-link__icon">
+                        <i class="bi bi-people"></i>
+                    </span>
+                    <span>Kullanıcılar</span>
+                </a>
+                <a href="{{ url_for('admin_appointments') }}"
+                    class="mobile-dock-link {% if request.endpoint == 'admin_appointments' %}is-active{% endif %}">
+                    <span class="mobile-dock-link__icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </span>
+                    <span>Randevu</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('user_appointments') }}"
+                    class="mobile-dock-link {% if request.endpoint in ['user_appointments', 'user_appointments_by_country', 'user_appointment_edit', 'user_appointment_update_request'] %}is-active{% endif %}">
+                    <span class="mobile-dock-link__icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </span>
+                    <span>Randevular</span>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="mobile-dock-link">
+                    <span class="mobile-dock-link__icon">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </span>
+                    <span>Çıkış</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% else %}
+    <div class="relative flex min-h-screen flex-col bg-slate-950">
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+            <div class="absolute inset-0 bg-grid-slate [background-size:48px_48px] opacity-40"></div>
+            <div class="absolute inset-x-0 top-[-25%] h-[320px] bg-emerald-500/20 blur-[160px]"></div>
+        </div>
+        <main class="flex flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+            <div class="w-full max-w-md space-y-8">
+                <div id="flash-container" class="space-y-3">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div
+                        class="flash-message flex items-start gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/80 px-4 py-3 text-sm text-slate-200">
+                        <div
+                            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-xl">
+                            {% if category == 'success' %}
+                            <i class="bi bi-check-circle-fill text-emerald-400"></i>
+                            {% elif category == 'danger' %}
+                            <i class="bi bi-x-circle-fill text-red-400"></i>
+                            {% elif category == 'warning' %}
+                            <i class="bi bi-exclamation-triangle-fill text-amber-300"></i>
+                            {% else %}
+                            <i class="bi bi-info-circle-fill text-sky-300"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 pt-1">
+                            <p class="font-medium text-slate-100">{{ message }}</p>
+                        </div>
+                        <button type="button"
+                            class="inline-flex items-center justify-center rounded-xl border border-transparent bg-slate-900 px-2 py-1 text-xs text-slate-500"
+                            onclick="this.closest('.flash-message')?.remove()">
+                            <span>Kapat</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                {% block unauthenticated %}{% endblock %}
+            </div>
+        </main>
+        <footer class="border-t border-slate-800/80 bg-slate-950/90 py-6 text-center">
+            <p class="text-sm font-semibold text-emerald-300">VIZAL</p>
+            <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Profesyonel. Dinamik. Güvenilir</p>
+            <p class="text-xs text-slate-600 mt-3">© 2025 Tüm hakları saklıdır.</p>
+        </footer>
+    </div>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script>
+        document.addEventListener( 'DOMContentLoaded', () => {
+            const sidebar = document.getElementById( 'sidebar' );
+            const overlay = document.getElementById( 'sidebarOverlay' );
+            const toggle = document.getElementById( 'sidebarToggle' );
+            const close = document.getElementById( 'sidebarClose' );
+            const scrollArea = document.querySelector( '[data-scroll-area]' );
+            const header = document.querySelector( '[data-header]' );
+            const mobileDock = document.getElementById( 'mobileDock' );
+            const body = document.body;
+
+            const openSidebar = () => {
+                sidebar?.classList.remove( '-translate-x-full' );
+                overlay?.classList.remove( 'hidden' );
+                overlay?.classList.add( 'animate-fadeIn' );
+                body.style.overflow = 'hidden';
+            };
+
+            const closeSidebar = ( instant = false ) => {
+                if ( !sidebar ) return;
+                sidebar.classList.add( '-translate-x-full' );
+                overlay?.classList.add( 'hidden' );
+                overlay?.classList.remove( 'animate-fadeIn' );
+                if ( !instant ) {
+                    setTimeout( () => {
+                        body.style.overflow = '';
+                    }, 250 );
+                } else {
+                    body.style.overflow = '';
+                }
+            };
+
+            toggle?.addEventListener( 'click', () => openSidebar() );
+            close?.addEventListener( 'click', () => closeSidebar() );
+            overlay?.addEventListener( 'click', () => closeSidebar() );
+            document.addEventListener( 'keydown', ( event ) => {
+                if ( event.key === 'Escape' ) {
+                    closeSidebar();
+                }
+            } );
+
+            const syncSidebarState = () => {
+                if ( window.innerWidth >= 1024 ) {
+                    sidebar?.classList.remove( '-translate-x-full' );
+                    overlay?.classList.add( 'hidden' );
+                    body.style.overflow = '';
+                } else {
+                    sidebar?.classList.add( '-translate-x-full' );
+                }
+            };
+
+            syncSidebarState();
+            window.addEventListener( 'resize', () => syncSidebarState() );
+
+            if ( scrollArea && header ) {
+                const handleScroll = () => {
+                    if ( scrollArea.scrollTop > 6 ) {
+                        header.classList.add( 'is-elevated' );
+                    } else {
+                        header.classList.remove( 'is-elevated' );
+                    }
+                };
+                scrollArea.addEventListener( 'scroll', handleScroll, { passive: true } );
+                handleScroll();
+            }
+
+            if ( mobileDock ) {
+                const dockLinks = mobileDock.querySelectorAll( '.mobile-dock-link' );
+                dockLinks.forEach( ( link ) => {
+                    link.addEventListener( 'click', () => {
+                        dockLinks.forEach( ( item ) => item.classList.remove( 'is-active' ) );
+                        link.classList.add( 'is-active' );
+                    } );
+                } );
+            }
+        } );
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

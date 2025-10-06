@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+
+{% block title %}{% if country %}Ülke Düzenle{% else %}Yeni Ülke{% endif %}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Sistem Yönetimi</p>
+        <h1 class="mt-3 flex items-center gap-3 text-2xl font-semibold text-slate-100">
+            <i class="bi bi-flag text-emerald-400"></i>
+            {% if country %}Ülke Düzenle{% else %}Yeni Ülke Ekle{% endif %}
+        </h1>
+        <nav class="mt-3 text-xs text-slate-500">
+            <ol class="flex flex-wrap items-center gap-2">
+                <li>
+                    <a href="{{ url_for('dashboard') }}" class="transition hover:text-slate-300">Dashboard</a>
+                </li>
+                <li class="text-slate-600">/</li>
+                <li>
+                    <a href="{{ url_for('admin_countries') }}" class="transition hover:text-slate-300">Ülkeler</a>
+                </li>
+                <li class="text-slate-400">/</li>
+                <li class="text-slate-300">{% if country %}Düzenle{% else %}Yeni{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <section class="rounded-3xl border border-slate-800/70 bg-slate-950/80 p-8 shadow-xl">
+        <form method="POST" action="" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            <div>
+                {{ form.name.label(class_="text-sm font-medium text-slate-200") }}
+                {{ form.name(class_="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm
+                text-slate-100 transition focus:border-emerald-400 focus:outline-none focus:ring-2
+                focus:ring-emerald-400/40" + (" border-red-500/60 focus:border-red-400 focus:ring-red-400/30" if
+                form.name.errors else "")) }}
+                {% if form.name.errors %}
+                <p class="mt-2 text-sm text-red-300">
+                    {% for error in form.name.errors %}{{ error }}{% endfor %}
+                </p>
+                {% endif %}
+                <p class="mt-2 text-xs text-slate-500">Ülkenin tam adı (örn: Amerika Birleşik Devletleri)</p>
+            </div>
+
+            <div>
+                {{ form.code.label(class_="text-sm font-medium text-slate-200") }}
+                {{ form.code(class_="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm
+                uppercase tracking-[0.2em] text-slate-100 transition focus:border-emerald-400 focus:outline-none
+                focus:ring-2 focus:ring-emerald-400/40" + (" border-red-500/60 focus:border-red-400
+                focus:ring-red-400/30" if form.code.errors else ""), maxlength="3", id="code") }}
+                {% if form.code.errors %}
+                <p class="mt-2 text-sm text-red-300">
+                    {% for error in form.code.errors %}{{ error }}{% endfor %}
+                </p>
+                {% endif %}
+                <p class="mt-2 text-xs text-slate-500">3 harfli ISO ülke kodu (örn: USA, GBR, DEU)</p>
+            </div>
+
+            <div>
+                {{ form.flag_emoji.label(class_="text-sm font-medium text-slate-200") }}
+                <div class="mt-2 flex gap-3">
+                    <div class="flex-1 relative">
+                        <div id="flagPreview"
+                            class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-9 rounded border border-slate-700/50 overflow-hidden bg-slate-900 flex items-center justify-center">
+                            <i class="bi bi-flag text-slate-600 text-xl"></i>
+                        </div>
+                        {{ form.flag_emoji(class_="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-20 pr-4
+                        py-3 text-sm text-slate-100 transition focus:border-emerald-400 focus:outline-none focus:ring-2
+                        focus:ring-emerald-400/40" + (" border-red-500/60 focus:border-red-400 focus:ring-red-400/30" if
+                        form.flag_emoji.errors else ""), placeholder="Bayrak kodu", id="flagInput", readonly="") }}
+                    </div>
+                    <button type="button" id="openFlagPicker"
+                        class="inline-flex items-center gap-2 rounded-2xl border border-sky-500/40 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 transition hover:bg-sky-500/20">
+                        <i class="bi bi-collection"></i>
+                        Bayrak Seç
+                    </button>
+                </div>
+                {% if form.flag_emoji.errors %}
+                <p class="mt-2 text-sm text-red-300">
+                    {% for error in form.flag_emoji.errors %}{{ error }}{% endfor %}
+                </p>
+                {% endif %}
+                <p class="mt-2 text-xs text-slate-500">
+                    Ülke bayrağını yukarıdaki "Bayrak Seç" butonundan seçin
+                </p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800/80 bg-slate-950/70 px-4 py-4">
+                <label class="flex items-center justify-between text-sm text-slate-300">
+                    <span>Ülke Aktif Olsun</span>
+                    {{ form.is_active(class_="peer sr-only") }}
+                    <span
+                        class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-800 transition peer-checked:bg-emerald-500/70">
+                        <span
+                            class="absolute left-1 h-4 w-4 rounded-full bg-slate-400 transition peer-checked:translate-x-5 peer-checked:bg-white"></span>
+                    </span>
+                </label>
+                <p class="mt-2 text-xs text-slate-500">Pasif ülkeler kullanıcı seçimlerinde görünmez.</p>
+            </div>
+
+            <!-- Randevu Formu Alanları -->
+            <div class="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
+                <h3 class="flex items-center gap-2 text-sm font-semibold text-amber-200">
+                    <i class="bi bi-card-checklist text-lg"></i>
+                    Randevu Formu Alanları
+                </h3>
+                <p class="mt-2 text-xs text-slate-400">
+                    Bu ülke için randevu oluştururken danışmanların dolduracağı alanları seçin.
+                    <span class="text-emerald-300">Ad, Soyad ve Pasaport No</span> tüm ülkeler için zorunludur.
+                </p>
+
+                <input type="hidden" id="requiredFieldsData" name="required_fields" value="">
+
+                <div class="mt-5 space-y-3">
+                    <!-- Doğum Tarihi -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_birth_date"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="birth_date">
+                            <label for="field_birth_date"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Doğum
+                                Tarihi</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_birth_date"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="birth_date" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Telefon -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_phone"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="phone">
+                            <label for="field_phone"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Telefon
+                                Numarası</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_phone"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="phone" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Email -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_email"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="email">
+                            <label for="field_email"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">E-posta
+                                Adresi</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_email"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="email" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Pasaport Düzenleme Tarihi -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_passport_issue_date"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="passport_issue_date">
+                            <label for="field_passport_issue_date"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Pasaport
+                                Düzenleme Tarihi</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_passport_issue_date"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="passport_issue_date" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Pasaport Geçerlilik Tarihi -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_passport_expiry_date"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="passport_expiry_date">
+                            <label for="field_passport_expiry_date"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Pasaport
+                                Geçerlilik Tarihi</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_passport_expiry_date"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="passport_expiry_date" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Uyruk -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_nationality"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="nationality">
+                            <label for="field_nationality"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Uyruk</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_nationality"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="nationality" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Seyahat Tarihi -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_travel_date"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="travel_date">
+                            <label for="field_travel_date"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Seyahat
+                                Tarihi</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_travel_date"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="travel_date" disabled>
+                        </label>
+                    </div>
+
+                    <!-- Tercih Edilen Randevu Tarihleri -->
+                    <div
+                        class="flex items-center justify-between rounded-xl border border-slate-800/70 bg-slate-950/60 px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="field_preferred_date_range"
+                                class="field-checkbox peer h-5 w-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-2 focus:ring-emerald-400/40"
+                                data-field="preferred_date_range">
+                            <label for="field_preferred_date_range"
+                                class="cursor-pointer text-sm text-slate-300 peer-checked:text-slate-100">Tercih Edilen
+                                Randevu Tarihleri Aralığı</label>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Zorunlu</span>
+                            <input type="checkbox" id="req_preferred_date_range"
+                                class="required-checkbox h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-400 disabled:opacity-30"
+                                data-field="preferred_date_range" disabled>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+                    <i class="bi bi-check-circle"></i>
+                    {% if country %}Güncelle{% else %}Oluştur{% endif %}
+                </button>
+                <a href="{{ url_for('admin_countries') }}"
+                    class="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-700 hover:text-slate-100">
+                    <i class="bi bi-x-circle"></i>
+                    İptal
+                </a>
+            </div>
+        </form>
+    </section>
+
+    <aside class="space-y-6">
+        <div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 p-6">
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <i class="bi bi-info-circle text-lg text-sky-300"></i>
+                Bilgi Kartı
+            </h2>
+            <div class="mt-5 space-y-4 text-sm text-slate-400">
+                <div>
+                    <p class="font-medium text-slate-200">Ülke Kodu</p>
+                    <p class="mt-2">3 harfli ISO 3166-1 alpha-3 standardına uygun kod kullanın. Örn: USA, GBR, DEU.</p>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200">Bayrak Emojisi</p>
+                    <p class="mt-2">Emoji ekleyerek listeleri daha görsel hale getirebilirsiniz. Windows için <kbd
+                            class="rounded bg-slate-900 px-2 py-1 text-xs text-slate-300">Win</kbd> + <kbd
+                            class="rounded bg-slate-900 px-2 py-1 text-xs text-slate-300">.</kbd>.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 p-6">
+            <h3 class="text-sm font-semibold text-slate-200">Popüler Ülkeler</h3>
+            <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium text-slate-200">
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇺🇸 USA</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇬🇧 GBR</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇩🇪 DEU</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇫🇷 FRA</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇮🇹 ITA</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇪🇸 ESP</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇨🇦 CAN</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇦🇺 AUS</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇯🇵 JPN</span>
+                <span class="rounded-full border border-slate-800/60 bg-slate-950 px-3 py-2">🇰🇷 KOR</span>
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dünya ülkeleri ve bayrakları (ISO 3166-1 alpha-3)
+    const COUNTRY_FLAGS = {
+        'USA': { flag: '🇺🇸', name: 'Amerika Birleşik Devletleri' },
+        'GBR': { flag: '🇬🇧', name: 'İngiltere' },
+        'DEU': { flag: '🇩🇪', name: 'Almanya' },
+        'FRA': { flag: '🇫🇷', name: 'Fransa' },
+        'ITA': { flag: '🇮🇹', name: 'İtalya' },
+        'ESP': { flag: '🇪🇸', name: 'İspanya' },
+        'CAN': { flag: '🇨🇦', name: 'Kanada' },
+        'AUS': { flag: '🇦🇺', name: 'Avustralya' },
+        'JPN': { flag: '🇯🇵', name: 'Japonya' },
+        'KOR': { flag: '🇰🇷', name: 'Güney Kore' },
+        'CHN': { flag: '🇨🇳', name: 'Çin' },
+        'IND': { flag: '🇮🇳', name: 'Hindistan' },
+        'BRA': { flag: '🇧🇷', name: 'Brezilya' },
+        'MEX': { flag: '🇲🇽', name: 'Meksika' },
+        'RUS': { flag: '🇷🇺', name: 'Rusya' },
+        'TUR': { flag: '🇹🇷', name: 'Türkiye' },
+        'SAU': { flag: '🇸🇦', name: 'Suudi Arabistan' },
+        'ARE': { flag: '🇦🇪', name: 'Birleşik Arap Emirlikleri' },
+        'EGY': { flag: '🇪🇬', name: 'Mısır' },
+        'ZAF': { flag: '🇿🇦', name: 'Güney Afrika' },
+        'NGA': { flag: '🇳🇬', name: 'Nijerya' },
+        'ARG': { flag: '🇦🇷', name: 'Arjantin' },
+        'CHL': { flag: '🇨🇱', name: 'Şili' },
+        'COL': { flag: '🇨🇴', name: 'Kolombiya' },
+        'PER': { flag: '🇵🇪', name: 'Peru' },
+        'NLD': { flag: '🇳🇱', name: 'Hollanda' },
+        'BEL': { flag: '🇧🇪', name: 'Belçika' },
+        'CHE': { flag: '🇨🇭', name: 'İsviçre' },
+        'AUT': { flag: '🇦🇹', name: 'Avusturya' },
+        'SWE': { flag: '🇸🇪', name: 'İsveç' },
+        'NOR': { flag: '🇳🇴', name: 'Norveç' },
+        'DNK': { flag: '🇩🇰', name: 'Danimarka' },
+        'FIN': { flag: '🇫🇮', name: 'Finlandiya' },
+        'POL': { flag: '🇵🇱', name: 'Polonya' },
+        'CZE': { flag: '🇨🇿', name: 'Çekya' },
+        'HUN': { flag: '🇭🇺', name: 'Macaristan' },
+        'ROU': { flag: '🇷🇴', name: 'Romanya' },
+        'BGR': { flag: '🇧🇬', name: 'Bulgaristan' },
+        'GRC': { flag: '🇬🇷', name: 'Yunanistan' },
+        'PRT': { flag: '🇵🇹', name: 'Portekiz' },
+        'IRL': { flag: '🇮🇪', name: 'İrlanda' },
+        'ISL': { flag: '🇮🇸', name: 'İzlanda' },
+        'HRV': { flag: '🇭🇷', name: 'Hırvatistan' },
+        'SRB': { flag: '🇷🇸', name: 'Sırbistan' },
+        'UKR': { flag: '🇺🇦', name: 'Ukrayna' },
+        'SGP': { flag: '🇸🇬', name: 'Singapur' },
+        'MYS': { flag: '🇲🇾', name: 'Malezya' },
+        'THA': { flag: '🇹🇭', name: 'Tayland' },
+        'VNM': { flag: '🇻🇳', name: 'Vietnam' },
+        'IDN': { flag: '🇮🇩', name: 'Endonezya' },
+        'PHL': { flag: '🇵🇭', name: 'Filipinler' },
+        'NZL': { flag: '🇳🇿', name: 'Yeni Zelanda' },
+        'ISR': { flag: '🇮🇱', name: 'İsrail' },
+        'PAK': { flag: '🇵🇰', name: 'Pakistan' },
+        'BGD': { flag: '🇧🇩', name: 'Bangladeş' },
+        'IRN': { flag: '🇮🇷', name: 'İran' },
+        'IRQ': { flag: '🇮🇶', name: 'Irak' },
+        'KWT': { flag: '🇰🇼', name: 'Kuveyt' },
+        'QAT': { flag: '🇶🇦', name: 'Katar' },
+        'OMN': { flag: '🇴🇲', name: 'Umman' },
+        'JOR': { flag: '🇯🇴', name: 'Ürdün' },
+        'LBN': { flag: '🇱🇧', name: 'Lübnan' },
+        'MAR': { flag: '🇲🇦', name: 'Fas' },
+        'DZA': { flag: '🇩🇿', name: 'Cezayir' },
+        'TUN': { flag: '🇹🇳', name: 'Tunus' },
+        'LBY': { flag: '🇱🇾', name: 'Libya' },
+        'KEN': { flag: '🇰🇪', name: 'Kenya' },
+        'ETH': { flag: '🇪🇹', name: 'Etiyopya' },
+        'GHA': { flag: '🇬🇭', name: 'Gana' }
+    };
+
+    // ISO 3166-1 alpha-3 to alpha-2 dönüşümü
+    function convertToAlpha2( alpha3 ) {
+        const mapping = {
+            'USA': 'US', 'GBR': 'GB', 'DEU': 'DE', 'FRA': 'FR', 'ITA': 'IT', 'ESP': 'ES',
+            'CAN': 'CA', 'AUS': 'AU', 'JPN': 'JP', 'KOR': 'KR', 'CHN': 'CN', 'IND': 'IN',
+            'BRA': 'BR', 'MEX': 'MX', 'RUS': 'RU', 'TUR': 'TR', 'SAU': 'SA', 'ARE': 'AE',
+            'EGY': 'EG', 'ZAF': 'ZA', 'NGA': 'NG', 'ARG': 'AR', 'CHL': 'CL', 'COL': 'CO',
+            'PER': 'PE', 'NLD': 'NL', 'BEL': 'BE', 'CHE': 'CH', 'AUT': 'AT', 'SWE': 'SE',
+            'NOR': 'NO', 'DNK': 'DK', 'FIN': 'FI', 'POL': 'PL', 'CZE': 'CZ', 'HUN': 'HU',
+            'ROU': 'RO', 'BGR': 'BG', 'GRC': 'GR', 'PRT': 'PT', 'IRL': 'IE', 'ISL': 'IS',
+            'HRV': 'HR', 'SRB': 'RS', 'UKR': 'UA', 'SGP': 'SG', 'MYS': 'MY', 'THA': 'TH',
+            'VNM': 'VN', 'IDN': 'ID', 'PHL': 'PH', 'NZL': 'NZ', 'ISR': 'IL', 'PAK': 'PK',
+            'BGD': 'BD', 'IRN': 'IR', 'IRQ': 'IQ', 'KWT': 'KW', 'QAT': 'QA', 'OMN': 'OM',
+            'JOR': 'JO', 'LBN': 'LB', 'MAR': 'MA', 'DZA': 'DZ', 'TUN': 'TN', 'LBY': 'LY',
+            'KEN': 'KE', 'ETH': 'ET', 'GHA': 'GH'
+        };
+        return mapping[alpha3] || alpha3.substring( 0, 2 );
+    }
+
+    // Bayrak önizlemesini güncelle
+    function updateFlagPreview( alpha2Code, countryName ) {
+        const preview = document.getElementById( 'flagPreview' );
+        if ( !preview ) return;
+
+        const img = document.createElement( 'img' );
+        img.src = `https://flagcdn.com/48x36/${alpha2Code.toLowerCase()}.png`;
+        img.srcset = `https://flagcdn.com/96x72/${alpha2Code.toLowerCase()}.png 2x`;
+        img.className = 'w-full h-full object-cover';
+        img.alt = `${countryName} bayrağı`;
+
+        img.onerror = function () {
+            preview.innerHTML = '<i class="bi bi-flag text-slate-600 text-xl"></i>';
+        };
+
+        preview.innerHTML = '';
+        preview.appendChild( img );
+    }
+
+    document.addEventListener( 'DOMContentLoaded', () => {
+        const flagInput = document.getElementById( 'flagInput' );
+        const openPickerBtn = document.getElementById( 'openFlagPicker' );
+        const codeInput = document.getElementById( 'code' );
+
+        if ( !flagInput || !openPickerBtn ) return;
+
+        openPickerBtn.addEventListener( 'click', () => {
+            createFlagPickerModal();
+        } );
+
+        // Sayfa yüklendiğinde mevcut bayrağı göster
+        if ( codeInput && codeInput.value ) {
+            const alpha2 = convertToAlpha2( codeInput.value );
+            const countryData = COUNTRY_FLAGS[codeInput.value];
+            if ( countryData ) {
+                updateFlagPreview( alpha2, countryData.name );
+            } else {
+                // Eğer COUNTRY_FLAGS'de yoksa ülke adını input'tan al
+                const nameInput = document.getElementById( 'name' );
+                const countryName = nameInput ? nameInput.value : 'Ülke';
+                updateFlagPreview( alpha2, countryName );
+            }
+        }
+    } );
+
+    function createFlagPickerModal() {
+        const modal = document.createElement( 'div' );
+        modal.className = 'fixed inset-0 z-[10001] flex items-center justify-center p-4';
+        modal.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+        modal.style.backdropFilter = 'blur(8px)';
+
+        modal.innerHTML = `
+            <div class="flag-picker-modal relative max-w-2xl w-full max-h-[90vh] transform scale-95 opacity-0 transition-all duration-300">
+                <div class="rounded-3xl border border-slate-800/80 bg-slate-950/95 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div class="flex items-center justify-between border-b border-slate-800/60 px-6 py-4 flex-shrink-0">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-100">Ülke Bayrağı Seçin</h3>
+                            <p class="text-xs text-slate-400 mt-1">Listeden bir bayrak seçin</p>
+                        </div>
+                        <button type="button" class="close-picker inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:text-slate-100">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="px-6 py-4 border-b border-slate-800/60 flex-shrink-0">
+                        <div class="relative">
+                            <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="text" id="flagSearch" placeholder="Ülke adı veya kodu ile ara..." 
+                                class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40">
+                        </div>
+                    </div>
+
+                    <div class="overflow-y-auto flex-1 px-6 py-4">
+                        <div id="flagsGrid" class="grid gap-2"></div>
+                        <div id="noResults" class="hidden text-center py-12 text-slate-400">
+                            <i class="bi bi-search text-4xl mb-3 block"></i>
+                            <p>Sonuç bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild( modal );
+
+        // Bayrak listesini DOM ile oluştur
+        const flagsGrid = modal.querySelector( '#flagsGrid' );
+        const sortedCountries = Object.entries( COUNTRY_FLAGS )
+            .sort( ( a, b ) => a[1].name.localeCompare( b[1].name, 'tr' ) );
+
+        sortedCountries.forEach( ( [code, data] ) => {
+            const btn = document.createElement( 'button' );
+            btn.type = 'button';
+            btn.className = 'flag-option flex items-center gap-3 rounded-xl border border-slate-800/60 bg-slate-950/80 px-4 py-3 text-left transition hover:border-emerald-500/50 hover:bg-slate-900/80';
+            btn.setAttribute( 'data-flag', data.flag );
+            btn.setAttribute( 'data-code', code );
+            btn.setAttribute( 'data-name', data.name );
+
+            // ISO 3166-1 alpha-3 kodunu alpha-2'ye çevir (bayrak görselleri için)
+            const alpha2Code = convertToAlpha2( code );
+
+            btn.innerHTML = `
+                <img class="country-flag w-12 h-9 rounded border border-slate-700/50 object-cover" 
+                     data-country-code="${code}" alt="${data.name} bayrağı"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                <span class="text-3xl leading-none hidden">${data.flag}</span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-100">${data.name}</p>
+                    <p class="text-xs text-slate-400">${code}</p>
+                </div>
+                <i class="bi bi-check-circle text-emerald-400 opacity-0 transition"></i>
+            `;
+
+            // Bayrak görselini yükle
+            const img = btn.querySelector( '.country-flag' );
+            img.src = `https://flagcdn.com/48x36/${alpha2Code.toLowerCase()}.png`;
+            img.srcset = `https://flagcdn.com/96x72/${alpha2Code.toLowerCase()}.png 2x`;
+
+            flagsGrid.appendChild( btn );
+        } );
+
+        document.body.appendChild( modal );
+
+        // Animasyon
+        requestAnimationFrame( () => {
+            const pickerModal = modal.querySelector( '.flag-picker-modal' );
+            pickerModal.style.transform = 'scale(1)';
+            pickerModal.style.opacity = '1';
+        } );
+
+        const close = () => {
+            const pickerModal = modal.querySelector( '.flag-picker-modal' );
+            pickerModal.style.transform = 'scale(0.95)';
+            pickerModal.style.opacity = '0';
+            modal.style.opacity = '0';
+            setTimeout( () => modal.remove(), 200 );
+        };
+
+        // Bayrak seçimi
+        modal.querySelectorAll( '.flag-option' ).forEach( btn => {
+            btn.addEventListener( 'click', () => {
+                const flag = btn.getAttribute( 'data-flag' );
+                const code = btn.getAttribute( 'data-code' );
+                const alpha2 = convertToAlpha2( code );
+
+                // Flag input'a kodu yaz
+                document.getElementById( 'flagInput' ).value = code;
+
+                // Bayrak önizlemesini güncelle
+                updateFlagPreview( alpha2, COUNTRY_FLAGS[code].name );
+
+                // İlgili ülke kodu varsa otomatik doldur
+                const codeInput = document.getElementById( 'code' );
+                if ( codeInput && !codeInput.value ) {
+                    codeInput.value = code;
+                }
+
+                // İlgili ülke adı varsa otomatik doldur
+                const nameInput = document.getElementById( 'name' );
+                if ( nameInput && !nameInput.value ) {
+                    nameInput.value = COUNTRY_FLAGS[code].name;
+                }
+
+                showAlert( 'success', `${flag} ${COUNTRY_FLAGS[code].name} bayrağı seçildi` );
+                close();
+            } );
+        } );
+
+        // Arama
+        const searchInput = modal.querySelector( '#flagSearch' );
+        const noResults = modal.querySelector( '#noResults' );
+
+        searchInput.addEventListener( 'input', ( e ) => {
+            const query = e.target.value.toLowerCase().trim();
+            const options = modal.querySelectorAll( '.flag-option' );
+            let visibleCount = 0;
+
+            options.forEach( opt => {
+                const code = opt.getAttribute( 'data-code' ).toLowerCase();
+                const name = opt.getAttribute( 'data-name' ).toLowerCase();
+                const matches = name.includes( query ) || code.includes( query );
+
+                opt.style.display = matches ? '' : 'none';
+                if ( matches ) visibleCount++;
+            } );
+
+            flagsGrid.style.display = visibleCount > 0 ? '' : 'none';
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        } );
+
+        modal.querySelector( '.close-picker' ).addEventListener( 'click', close );
+        modal.addEventListener( 'click', ( e ) => {
+            if ( e.target === modal ) close();
+        } );
+
+        document.addEventListener( 'keydown', function escHandler( e ) {
+            if ( e.key === 'Escape' ) {
+                document.removeEventListener( 'keydown', escHandler );
+                close();
+            }
+        } );
+
+        // Arama inputuna focus
+        setTimeout( () => searchInput.focus(), 100 );
+    }
+
+    // ==============================================
+    // Randevu Formu Alanları Yönetimi
+    // ==============================================
+    document.addEventListener( 'DOMContentLoaded', () => {
+        const fieldCheckboxes = document.querySelectorAll( '.field-checkbox' );
+        const requiredCheckboxes = document.querySelectorAll( '.required-checkbox' );
+        const hiddenInput = document.getElementById( 'requiredFieldsData' );
+
+        // Alan checkbox'ı toggle edildiğinde
+        fieldCheckboxes.forEach( checkbox => {
+            checkbox.addEventListener( 'change', function () {
+                const fieldName = this.getAttribute( 'data-field' );
+                const requiredCheckbox = document.getElementById( `req_${fieldName}` );
+
+                // Alan aktifse "zorunlu" checkbox'ı etkinleştir
+                if ( this.checked ) {
+                    requiredCheckbox.disabled = false;
+                } else {
+                    requiredCheckbox.disabled = true;
+                    requiredCheckbox.checked = false;
+                }
+
+                updateHiddenInput();
+            } );
+        } );
+
+        // Zorunlu checkbox'ları değiştiğinde
+        requiredCheckboxes.forEach( checkbox => {
+            checkbox.addEventListener( 'change', updateHiddenInput );
+        } );
+
+        // Hidden input'u JSON ile güncelle
+        function updateHiddenInput() {
+            const data = {};
+
+            fieldCheckboxes.forEach( checkbox => {
+                const fieldName = checkbox.getAttribute( 'data-field' );
+                if ( checkbox.checked ) {
+                    const requiredCheckbox = document.getElementById( `req_${fieldName}` );
+                    data[fieldName] = {
+                        enabled: true,
+                        required: requiredCheckbox.checked
+                    };
+                }
+            } );
+
+            hiddenInput.value = JSON.stringify( data );
+        }
+
+        // Düzenleme modunda mevcut değerleri yükle
+        {% if country %}
+        try {
+            const existingFields = {{ country.get_required_fields() | tojson
+        }};
+
+    Object.keys( existingFields ).forEach( fieldName => {
+        const fieldCheckbox = document.getElementById( `field_${fieldName}` );
+        const requiredCheckbox = document.getElementById( `req_${fieldName}` );
+
+        if ( fieldCheckbox && existingFields[fieldName].enabled ) {
+            fieldCheckbox.checked = true;
+            requiredCheckbox.disabled = false;
+
+            if ( existingFields[fieldName].required ) {
+                requiredCheckbox.checked = true;
+            }
+        }
+    } );
+
+    updateHiddenInput();
+        } catch ( e ) {
+        console.error( 'Alan yükleme hatası:', e );
+    }
+    {% endif %}
+
+    // Form submit edilmeden önce hidden input'u güncelle
+    const form = document.querySelector( 'form' );
+    if ( form ) {
+        form.addEventListener( 'submit', function ( e ) {
+            updateHiddenInput();
+        } );
+    }
+    });
+</script>
+{% endblock %}

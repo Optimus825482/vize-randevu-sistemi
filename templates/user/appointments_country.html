@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}{{ country.name }} Randevuları{% endblock %}
+
+{% block content %}
+<section class="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Randevu Oluşturma</p>
+        <h1 class="mt-3 flex items-center gap-3 text-2xl font-semibold text-slate-100">
+            {% if country.flag_emoji %}<span class="text-3xl">{{ country.flag_emoji }}</span>{% endif %}
+            {{ country.name }}
+        </h1>
+        <p class="mt-2 max-w-xl text-sm text-slate-400">Bu ülke için kota durumunuzu görüntüleyebilir, yeni başvuru
+            oluşturabilir ve önceki taleplerinizi inceleyebilirsiniz.</p>
+    </div>
+    <a href="{{ url_for('user_appointments') }}"
+        class="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-700 hover:text-slate-100">
+        <i class="bi bi-arrow-left"></i>
+        Randevularım
+    </a>
+</section>
+
+<div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <section class="space-y-6">
+        <div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 p-6 shadow-xl">
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <i class="bi bi-clipboard-check text-lg text-emerald-300"></i>
+                Kota Özeti
+            </h2>
+            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl border border-slate-800/70 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-wide text-slate-400">Kota Limiti</p>
+                    <p class="mt-2 text-2xl font-semibold text-slate-100">{{ quota.quota_limit }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800/70 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-wide text-slate-400">Kullanılan</p>
+                    <p class="mt-2 text-2xl font-semibold text-slate-100">{{ used_quota }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800/70 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-wide text-slate-400">Kalan</p>
+                    <p
+                        class="mt-2 text-2xl font-semibold {{ 'text-emerald-200' if remaining_quota>0 else 'text-red-300' }}">
+                        {{ remaining_quota }}</p>
+                </div>
+            </div>
+            {% if remaining_quota <= 0 %} <div
+                class="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+                Bu ülke için kota limitine ulaştınız. Yeni başvuru oluşturabilmek için mevcut randevulardan birini
+                tamamlamanız veya yöneticinizden kota güncellemesi talep etmeniz gerekir.
+        </div>
+        {% else %}
+        <div class="mt-4 flex justify-center">
+            <button type="button" id="openAppointmentFormBtn"
+                class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+                <i class="bi bi-plus-circle"></i>
+                Yeni Randevu Talebi Oluştur
+            </button>
+        </div>
+        {% endif %}
+</div>
+</section>
+
+<aside class="space-y-6">
+    <div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 shadow-xl">
+        <header class="flex items-center justify-between border-b border-slate-800/60 px-6 py-5">
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <i class="bi bi-clock-history text-lg text-sky-300"></i>
+                Bu Ülke İçin Randevularım
+            </h2>
+        </header>
+        {% if appointments %}
+        <div class="overflow-hidden rounded-2xl border border-slate-800/70">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                    <thead class="bg-slate-950/80 text-xs uppercase tracking-[0.3em] text-slate-500">
+                        <tr>
+                            <th class="px-4 py-3 text-left">ID</th>
+                            <th class="px-4 py-3 text-left">Başvuran</th>
+                            <th class="px-4 py-3 text-left">Durum</th>
+                            <th class="px-4 py-3 text-left">Tarih</th>
+                            <th class="px-4 py-3 text-right">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/70 bg-slate-950/60">
+                        {% for apt in appointments %}
+                        <tr class="hover:bg-slate-900/60">
+                            <td class="px-4 py-3 font-semibold text-slate-200">#{{ apt.id }}</td>
+                            <td class="px-4 py-3 text-slate-300">{{ apt.applicant_name }} {{ apt.applicant_surname }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if apt.status == 'Bekleme' %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">{{
+                                    apt.status }}</span>
+                                {% elif apt.status == 'Süreç Başlatıldı' %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">{{
+                                    apt.status }}</span>
+                                {% elif apt.status == 'Tamamlandı' %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">{{
+                                    apt.status }}</span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-200">{{
+                                    apt.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-slate-400">{{ apt.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    {% if apt.can_edit() %}
+                                    <a href="{{ url_for('user_appointment_edit', apt_id=apt.id) }}"
+                                        class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-100"
+                                        title="Düzenle">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button"
+                                        data-delete-url="{{ url_for('user_appointment_delete', apt_id=apt.id) }}"
+                                        class="delete-appointment-btn inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-red-500/60 hover:text-red-200"
+                                        title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% else %}
+                                    <a href="{{ url_for('user_appointment_update_request', apt_id=apt.id) }}"
+                                        class="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-400/20"
+                                        title="Güncelleme talebi gönder">
+                                        <i class="bi bi-send"></i>
+                                        Talep
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center text-slate-500">
+            <i class="bi bi-inbox text-4xl text-slate-600"></i>
+            <p class="text-sm">Bu ülke için henüz randevu talebiniz bulunmuyor.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 p-6 text-xs text-slate-500">
+        <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+            <i class="bi bi-lightbulb text-lg text-sky-300"></i>
+            İpuçları
+        </h3>
+        <ul class="mt-3 space-y-2 list-disc list-inside">
+            <li>Formu göndermeden önce tüm bilgileri kontrol edin. Özellikle pasaport ve iletişim bilgileri kritik öneme
+                sahiptir.</li>
+            <li>Başvurunuz "Bekleme" durumundaysa düzenleyebilir veya silebilirsiniz. Diğer durumlar için güncelleme
+                talebi oluşturun.</li>
+            <li>Kota limitine ulaştığınızda yeni talep oluşturabilmek için mevcut başvurularınızdan birinin tamamlanması
+                gerekir.</li>
+        </ul>
+    </div>
+</aside>
+</div>
+
+<!-- Randevu Formu Modal -->
+<div id="appointmentFormModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl transform scale-95 transition-transform duration-300"
+        id="appointmentFormModalContent">
+        <div
+            class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-6 py-4">
+            <h3 class="text-lg font-semibold text-slate-100">Yeni Randevu Talebi</h3>
+            <button type="button" id="closeAppointmentFormModal"
+                class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-slate-200">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <form method="POST" class="space-y-6" id="appointmentForm">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="country_id" value="{{ country.id }}">
+
+                <!-- Zorunlu Alanlar -->
+                <div class="space-y-1">
+                    <p class="text-xs uppercase tracking-[0.3em] text-emerald-300">Zorunlu Bilgiler</p>
+                    <p class="text-xs text-slate-500">Aşağıdaki alanlar tüm ülkeler için zorunludur</p>
+                </div>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div>
+                        {{ form.applicant_name.label(class_='text-sm font-medium text-slate-200') }}
+                        {{ form.applicant_name(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80
+                        px-4 py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                        focus:ring-sky-400/40', required=true) }}
+                        {% if form.applicant_name.errors %}
+                        <p class="mt-2 text-xs text-red-300">{{ form.applicant_name.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {{ form.applicant_surname.label(class_='text-sm font-medium text-slate-200') }}
+                        {{ form.applicant_surname(class_='mt-2 w-full rounded-2xl border border-slate-800
+                        bg-slate-950/80 px-4 py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none
+                        focus:ring-2 focus:ring-sky-400/40', required=true) }}
+                        {% if form.applicant_surname.errors %}
+                        <p class="mt-2 text-xs text-red-300">{{ form.applicant_surname.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    {{ form.passport_number.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.passport_number(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4
+                    py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                    focus:ring-sky-400/40', required=true) }}
+                    {% if form.passport_number.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.passport_number.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Dinamik Alanlar Container -->
+                <div id="dynamicFieldsContainer" class="space-y-6"></div>
+
+                <!-- Ek Bilgiler -->
+                <div class="space-y-1 pt-4 border-t border-slate-800">
+                    <p class="text-xs uppercase tracking-[0.3em] text-sky-300">Ek Bilgiler</p>
+                    <p class="text-xs text-slate-500">İsteğe bağlı notlar ve açıklamalar</p>
+                </div>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div>
+                        {{ form.visa_type.label(class_='text-sm font-medium text-slate-200') }}
+                        {{ form.visa_type(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4
+                        py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                        focus:ring-sky-400/40') }}
+                        {% if form.visa_type.errors %}
+                        <p class="mt-2 text-xs text-red-300">{{ form.visa_type.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {{ form.notes.label(class_='text-sm font-medium text-slate-200') }}
+                        {{ form.notes(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                        text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                        focus:ring-sky-400/40') }}
+                        {% if form.notes.errors %}
+                        <p class="mt-2 text-xs text-red-300">{{ form.notes.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+                        <i class="bi bi-check-circle"></i>
+                        Randevu Oluştur
+                    </button>
+                    <button type="button" id="cancelAppointmentForm"
+                        class="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-700 hover:text-slate-100">
+                        <i class="bi bi-x-circle"></i>
+                        İptal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Alan etiketleri (Türkçe)
+    const FIELD_LABELS = {
+        birth_date: 'Doğum Tarihi',
+        phone: 'Telefon Numarası',
+        email: 'E-posta Adresi',
+        passport_issue_date: 'Pasaport Düzenleme Tarihi',
+        passport_expiry_date: 'Pasaport Geçerlilik Tarihi',
+        nationality: 'Uyruk',
+        travel_date: 'Seyahat Tarihi',
+        preferred_date_range: 'Tercih Edilen Randevu Tarihleri Aralığı'
+    };
+
+    // Alan tipleri
+    const FIELD_TYPES = {
+        birth_date: 'date',
+        phone: 'tel',
+        email: 'email',
+        passport_issue_date: 'date',
+        passport_expiry_date: 'date',
+        nationality: 'text',
+        travel_date: 'date',
+        preferred_date_range: 'daterange'
+    };
+
+    // Ülke ID'sini al
+    const countryId = {{ country.id }};
+
+    // Dinamik alanları yükle
+    async function loadDynamicFields() {
+        try {
+            const response = await fetch( `/api/countries/${countryId}/required-fields` );
+            const data = await response.json();
+
+            if ( !data.success ) {
+                console.error( 'Alan bilgileri alınamadı' );
+                return;
+            }
+
+            const container = document.getElementById( 'dynamicFieldsContainer' );
+            if ( !container ) return;
+
+            const requiredFields = data.required_fields;
+
+            // Eğer hiç alan yoksa bilgilendirme göster
+            if ( Object.keys( requiredFields ).length === 0 ) {
+                container.innerHTML = '';
+                return;
+            }
+
+            // Başlık ekle
+            const header = document.createElement( 'div' );
+            header.className = 'space-y-1 pt-4 border-t border-slate-800';
+            header.innerHTML = `
+                <p class="text-xs uppercase tracking-[0.3em] text-amber-300">Ülkeye Özel Bilgiler</p>
+                <p class="text-xs text-slate-500">${data.country_name} için gerekli ek bilgiler</p>
+            `;
+            container.appendChild( header );
+
+            // Grid container
+            const grid = document.createElement( 'div' );
+            grid.className = 'grid gap-6 md:grid-cols-2';
+
+            // Her alan için input oluştur
+            Object.entries( requiredFields ).forEach( ( [fieldName, fieldConfig] ) => {
+                if ( !fieldConfig.enabled ) return;
+
+                const fieldDiv = document.createElement( 'div' );
+
+                const label = document.createElement( 'label' );
+                label.className = 'text-sm font-medium text-slate-200';
+                label.setAttribute( 'for', fieldName );
+                label.textContent = FIELD_LABELS[fieldName] || fieldName;
+
+                // Zorunlu işareti
+                if ( fieldConfig.required ) {
+                    const required = document.createElement( 'span' );
+                    required.className = 'text-red-400 ml-1';
+                    required.textContent = '*';
+                    label.appendChild( required );
+                }
+
+                fieldDiv.appendChild( label );
+
+                // Alan tipi
+                const fieldType = FIELD_TYPES[fieldName] || 'text';
+
+                if ( fieldType === 'daterange' ) {
+                    // Tarih aralığı için 2 input
+                    const rangeContainer = document.createElement( 'div' );
+                    rangeContainer.className = 'mt-2 grid gap-3 grid-cols-2';
+
+                    const startInput = document.createElement( 'input' );
+                    startInput.type = 'date';
+                    startInput.name = 'preferred_date';
+                    startInput.id = 'preferred_date';
+                    startInput.className = 'w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40';
+                    startInput.placeholder = 'Başlangıç';
+                    if ( fieldConfig.required ) startInput.required = true;
+
+                    const endInput = document.createElement( 'input' );
+                    endInput.type = 'date';
+                    endInput.name = 'preferred_date_end';
+                    endInput.id = 'preferred_date_end';
+                    endInput.className = 'w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40';
+                    endInput.placeholder = 'Bitiş';
+                    if ( fieldConfig.required ) endInput.required = true;
+
+                    rangeContainer.appendChild( startInput );
+                    rangeContainer.appendChild( endInput );
+                    fieldDiv.appendChild( rangeContainer );
+
+                    const hint = document.createElement( 'p' );
+                    hint.className = 'mt-2 text-xs text-slate-500';
+                    hint.textContent = 'Randevu için tercih ettiğiniz tarih aralığını seçin';
+                    fieldDiv.appendChild( hint );
+                } else {
+                    // Normal input
+                    const input = document.createElement( 'input' );
+                    input.type = fieldType;
+                    input.name = fieldName;
+                    input.id = fieldName;
+                    input.className = 'mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40';
+
+                    if ( fieldConfig.required ) {
+                        input.required = true;
+                    }
+
+                    // Placeholder
+                    if ( fieldType === 'date' ) {
+                        input.placeholder = 'GG.AA.YYYY';
+                    } else if ( fieldType === 'email' ) {
+                        input.placeholder = 'ornek@email.com';
+                    } else if ( fieldType === 'tel' ) {
+                        input.placeholder = '+90 555 123 4567';
+                    }
+
+                    fieldDiv.appendChild( input );
+                }
+
+                grid.appendChild( fieldDiv );
+            } );
+
+            container.appendChild( grid );
+
+        } catch ( error ) {
+            console.error( 'Dinamik alanlar yüklenirken hata:', error );
+        }
+    }
+
+    document.addEventListener( 'DOMContentLoaded', () => {
+        // Modal elementleri
+        const modal = document.getElementById( 'appointmentFormModal' );
+        const modalContent = document.getElementById( 'appointmentFormModalContent' );
+        const openBtn = document.getElementById( 'openAppointmentFormBtn' );
+        const closeBtn = document.getElementById( 'closeAppointmentFormModal' );
+        const cancelBtn = document.getElementById( 'cancelAppointmentForm' );
+
+        // Modal açma
+        if ( openBtn ) {
+            openBtn.addEventListener( 'click', () => {
+                modal.classList.remove( 'pointer-events-none', 'opacity-0' );
+                modalContent.classList.remove( 'scale-95' );
+                modalContent.classList.add( 'scale-100' );
+                // Modal açıldığında dinamik alanları yükle
+                loadDynamicFields();
+            } );
+        }
+
+        // Modal kapatma fonksiyonu
+        const closeModal = () => {
+            modal.classList.add( 'opacity-0' );
+            modalContent.classList.remove( 'scale-100' );
+            modalContent.classList.add( 'scale-95' );
+            setTimeout( () => {
+                modal.classList.add( 'pointer-events-none' );
+            }, 300 );
+        };
+
+        // Modal kapatma butonları
+        if ( closeBtn ) {
+            closeBtn.addEventListener( 'click', closeModal );
+        }
+        if ( cancelBtn ) {
+            cancelBtn.addEventListener( 'click', closeModal );
+        }
+
+        // Modal dışına tıklama ile kapatma
+        modal.addEventListener( 'click', ( e ) => {
+            if ( e.target === modal ) {
+                closeModal();
+            }
+        } );
+
+        // Silme butonları
+        document.querySelectorAll( '.delete-appointment-btn' ).forEach( button => {
+            button.addEventListener( 'click', () => {
+                const url = button.getAttribute( 'data-delete-url' );
+                if ( url ) {
+                    deleteItem( url, () => {
+                        button.closest( 'tr' )?.remove();
+                    } );
+                }
+            } );
+        } );
+    } );
+</script>
+{% endblock %}

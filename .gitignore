@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment
+.env
+.venv
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports
+exports/*.xlsx
+exports/*.pdf
+
+# Local development files
+setup.bat
+setup.ps1
+setup_database.ps1
+init_db.py
+migration_*.py
+database_setup.sql
+
+# Node modules (if using npm for anything)
+node_modules/
+
+# Railway
+.railway/
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# Backup files
+*.bak
+*.backup

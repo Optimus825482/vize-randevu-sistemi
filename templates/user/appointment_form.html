@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Randevu Düzenle{% endblock %}
+
+{% block content %}
+<section class="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Randevu Düzenleme</p>
+        <h1 class="mt-3 flex items-center gap-3 text-2xl font-semibold text-slate-100">
+            <i class="bi bi-pencil-square text-emerald-400"></i>
+            Randevu Güncelle
+        </h1>
+        <p class="mt-2 max-w-xl text-sm text-slate-400">Başvurunuzda gerekli düzenlemeleri yapın. Güncellemeler yalnızca
+            "Bekleme" durumundaki randevular için uygulanır.</p>
+    </div>
+    <a href="{{ url_for('user_appointments_by_country', country_id=appointment.country_id) }}"
+        class="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-700 hover:text-slate-100">
+        <i class="bi bi-arrow-left"></i>
+        {{ appointment.country.name }} Randevuları
+    </a>
+</section>
+
+<div class="mt-6 rounded-3xl border border-slate-800/70 bg-slate-950/80 shadow-xl">
+    <header class="flex items-center justify-between border-b border-slate-800/60 px-6 py-5">
+        <div>
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <i class="bi bi-file-earmark-text text-lg text-sky-300"></i>
+                Başvuru Bilgileri
+            </h2>
+            <p class="mt-1 text-xs text-slate-500">Randevu ID: #{{ appointment.id }}</p>
+        </div>
+        <span
+            class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-4 py-1 text-xs text-slate-400">
+            {% if appointment.country.flag_emoji %}<span>{{ appointment.country.flag_emoji }}</span>{% endif %}
+            {{ appointment.country.name }}
+        </span>
+    </header>
+    <div class="px-6 py-6">
+        <form method="POST" class="space-y-6">
+            {{ form.hidden_tag() }}
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    {{ form.country_id.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.country_id(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                    text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40')
+                    }}
+                    {% if form.country_id.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.country_id.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.preferred_date.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.preferred_date(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4
+                    py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                    focus:ring-sky-400/40') }}
+                    {% if form.preferred_date.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.preferred_date.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    {{ form.applicant_name.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.applicant_name(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4
+                    py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                    focus:ring-sky-400/40') }}
+                    {% if form.applicant_name.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.applicant_name.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.applicant_surname.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.applicant_surname(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80
+                    px-4 py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                    focus:ring-sky-400/40') }}
+                    {% if form.applicant_surname.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.applicant_surname.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    {{ form.passport_number.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.passport_number(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4
+                    py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                    focus:ring-sky-400/40') }}
+                    {% if form.passport_number.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.passport_number.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.birth_date.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.birth_date(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                    text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40')
+                    }}
+                    {% if form.birth_date.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.birth_date.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    {{ form.phone.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.phone(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                    text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40')
+                    }}
+                    {% if form.phone.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.phone.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.email.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.email(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                    text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40')
+                    }}
+                    {% if form.email.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.email.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {{ form.address.label(class_='text-sm font-medium text-slate-200') }}
+                {{ form.address(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40') }}
+                {% if form.address.errors %}
+                <p class="mt-2 text-xs text-red-300">{{ form.address.errors[0] }}</p>
+                {% endif %}
+            </div>
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    {{ form.visa_type.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.visa_type(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                    text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40')
+                    }}
+                    {% if form.visa_type.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.visa_type.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.notes.label(class_='text-sm font-medium text-slate-200') }}
+                    {{ form.notes(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3
+                    text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40')
+                    }}
+                    {% if form.notes.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.notes.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+                    <i class="bi bi-check-circle"></i>
+                    Kaydet
+                </button>
+                <a href="{{ url_for('user_appointments_by_country', country_id=appointment.country_id) }}"
+                    class="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-700 hover:text-slate-100">
+                    <i class="bi bi-x-circle"></i>
+                    İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

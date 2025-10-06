@@ -1,0 +1,55 @@
+{% if quotas %}
+<div class="overflow-hidden rounded-2xl border border-slate-800/70">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-800 text-sm">
+            <thead class="bg-slate-950/80 text-xs uppercase tracking-[0.3em] text-slate-500">
+                <tr>
+                    <th class="px-6 py-4 text-left">Ülke</th>
+                    <th class="px-6 py-4 text-left">Kota Limiti</th>
+                    <th class="px-6 py-4 text-left">Kullanılan</th>
+                    <th class="px-6 py-4 text-left">Kalan</th>
+                    <th class="px-6 py-4 text-right">İşlem</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/70 bg-slate-950/60">
+                {% for quota in quotas %}
+                {% set used = user.get_used_quota_for_country(quota.country_id) %}
+                {% set remaining = quota.quota_limit - used %}
+                <tr class="hover:bg-slate-900/60">
+                    <td class="px-6 py-4 text-slate-300">
+                        <span class="flex items-center gap-2">
+                            <img class="country-flag w-10 h-8 rounded border border-slate-700/50 object-cover"
+                                data-country-code="{{ quota.country.code }}" alt="{{ quota.country.name }} bayrağı"
+                                onerror="this.style.display='none'">
+                            <span>{{ quota.country.name }}</span>
+                            <span class="text-xs text-slate-500">({{ quota.country.code }})</span>
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 font-semibold text-slate-200">{{ quota.quota_limit }}</td>
+                    <td class="px-6 py-4 text-slate-300">{{ used }}</td>
+                    <td class="px-6 py-4">
+                        <span
+                            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ 'bg-emerald-500/20 text-emerald-200' if remaining > 0 else 'bg-red-500/20 text-red-200' }}">
+                            {{ remaining }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button type="button" data-user-id="{{ user.id }}" data-quota-id="{{ quota.id }}"
+                            class="delete-quota-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-red-500/60 hover:text-red-200"
+                            title="Sil">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div
+    class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-700 bg-slate-950/60 px-6 py-12 text-center text-slate-500">
+    <i class="bi bi-inbox text-4xl text-slate-600"></i>
+    <p class="text-sm">Henüz kota atanmamış.</p>
+</div>
+{% endif %}

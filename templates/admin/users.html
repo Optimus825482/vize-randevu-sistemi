@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Kullanıcı Yönetimi{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Sistem Yönetimi</p>
+        <h1 class="mt-3 flex items-center gap-3 text-2xl font-semibold text-slate-100">
+            <i class="bi bi-people text-emerald-400"></i>
+            Kullanıcı Yönetimi
+        </h1>
+        <p class="mt-2 text-sm text-slate-400">Yetkileri yönetin, yeni ekip üyeleri ekleyin ve hesap durumlarını kontrol
+            edin.</p>
+    </div>
+    <a href="{{ url_for('admin_user_create') }}"
+        class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+        <i class="bi bi-person-plus"></i>
+        <span>Yeni Kullanıcı Ekle</span>
+    </a>
+</div>
+
+<form method="get"
+    class="grid grid-cols-1 gap-4 rounded-3xl border border-slate-800/80 bg-slate-950/80 p-6 shadow-xl lg:grid-cols-12 lg:gap-6">
+    <div class="lg:col-span-4">
+        <label for="q" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Arama</label>
+        <div class="relative">
+            <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+            <input id="q" name="q" type="search" value="{{ filters.q }}" placeholder="İsim, kullanıcı adı, e-posta..."
+                class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 pl-9 pr-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+        </div>
+    </div>
+
+    <div class="lg:col-span-2">
+        <label for="role" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Rol</label>
+        <select id="role" name="role"
+            class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+            <option value="all" {{ 'selected' if filters.role=='all' }}>Tümü</option>
+            <option value="admin" {{ 'selected' if filters.role=='admin' }}>Yöneticiler</option>
+            <option value="user" {{ 'selected' if filters.role=='user' }}>Danışmanlar</option>
+        </select>
+    </div>
+
+    <div class="lg:col-span-2">
+        <label for="status"
+            class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Durum</label>
+        <select id="status" name="status"
+            class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+            <option value="all" {{ 'selected' if filters.status=='all' }}>Tümü</option>
+            <option value="active" {{ 'selected' if filters.status=='active' }}>Aktif</option>
+            <option value="passive" {{ 'selected' if filters.status=='passive' }}>Pasif</option>
+        </select>
+    </div>
+
+    <div class="lg:col-span-2">
+        <label for="sort"
+            class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Sıralama</label>
+        <select id="sort" name="sort"
+            class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+            <option value="newest" {{ 'selected' if filters.sort=='newest' }}>En Yeni</option>
+            <option value="oldest" {{ 'selected' if filters.sort=='oldest' }}>En Eski</option>
+            <option value="name" {{ 'selected' if filters.sort=='name' }}>İsme Göre</option>
+        </select>
+    </div>
+
+    <div class="lg:col-span-1">
+        <label for="per_page"
+            class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Sayfa</label>
+        <select id="per_page" name="per_page"
+            class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+            {% for choice in per_page_choices %}
+            <option value="{{ choice }}" {{ 'selected' if filters.per_page==choice }}>{{ choice }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="lg:col-span-2 flex items-end">
+        <div class="flex w-full flex-col gap-2 sm:flex-row">
+            <button type="button" id="resetUserFilters"
+                class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800/70 focus:outline-none focus:ring-2 focus:ring-slate-600 focus:ring-offset-2 focus:ring-offset-slate-950">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Sıfırla
+            </button>
+            <button type="submit"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-950">
+                <i class="bi bi-funnel"></i>
+                Uygula
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-2xl border border-slate-800/70 bg-slate-950/80 p-5">
+        <p class="text-xs uppercase tracking-wide text-slate-400">Toplam Kullanıcı</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-100">{{ stats.total }}</p>
+        <p class="text-xs text-slate-500">Filtre kriterlerine uygun kayıt sayısı.</p>
+    </div>
+    <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+        <p class="text-xs uppercase tracking-wide text-emerald-200">Aktif</p>
+        <p class="mt-2 text-2xl font-semibold text-emerald-100">{{ stats.active if stats.active is not none else '—' }}
+        </p>
+        <p class="text-xs text-emerald-200/70">Tüm filtrelerde aktif kullanıcı sayısı.</p>
+    </div>
+    <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5">
+        <p class="text-xs uppercase tracking-wide text-rose-200">Pasif</p>
+        <p class="mt-2 text-2xl font-semibold text-rose-100">{{ stats.passive if stats.passive is not none else '—' }}
+        </p>
+        <p class="text-xs text-rose-200/70">Tüm filtrelerde pasif kullanıcı sayısı.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800/70 bg-slate-950/80 p-5">
+        <p class="text-xs uppercase tracking-wide text-indigo-300">Rol Dağılımı</p>
+        <p class="mt-2 text-sm text-slate-300">Admin: {{ filtered_admins }}</p>
+        <p class="text-sm text-slate-300">Danışman: {{ filtered_users }}</p>
+    </div>
+</div>
+
+<div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 shadow-xl">
+    <div class="overflow-hidden rounded-3xl">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-800 text-sm">
+                <thead class="bg-slate-950/80 text-xs uppercase tracking-[0.3em] text-slate-500">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left">ID</th>
+                        <th scope="col" class="px-6 py-4 text-left">Kullanıcı</th>
+                        <th scope="col" class="px-6 py-4 text-left">İletişim</th>
+                        <th scope="col" class="px-6 py-4 text-left">Rol</th>
+                        <th scope="col" class="px-6 py-4 text-left">Durum</th>
+                        <th scope="col" class="px-6 py-4 text-left">Kayıt</th>
+                        <th scope="col" class="px-6 py-4 text-right">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/70 bg-slate-950/60">
+                    {% if users.items %}
+                    {% for user in users.items %}
+                    <tr class="hover:bg-slate-900/60">
+                        <td class="px-6 py-4 font-semibold text-slate-200">#{{ user.id }}</td>
+                        <td class="flex items-center gap-3 px-6 py-4">
+                            <span
+                                class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-slate-400">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <div>
+                                <p class="font-medium text-slate-100">{{ user.full_name }}</p>
+                                <p class="text-xs text-slate-500">{{ user.username }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-slate-300">{{ user.email or '—' }}</p>
+                            {% if user.last_login %}
+                            <p class="text-xs text-slate-500">Son giriş: {{ user.last_login.strftime('%d.%m.%Y %H:%M')
+                                }}</p>
+                            {% else %}
+                            <p class="text-xs text-slate-500">Hiç giriş yapmadı</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if user.is_admin %}
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-200">
+                                <i class="bi bi-shield-lock"></i>
+                                Yönetici
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-3 py-1 text-xs font-medium text-sky-200">
+                                <i class="bi bi-person-badge"></i>
+                                Danışman
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if user.is_active %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-200">Aktif</span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400">Pasif</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-400">{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-end gap-2">
+                                {% if not user.is_admin %}
+                                <a href="{{ url_for('admin_user_edit', user_id=user.id) }}?modal=quotas"
+                                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-500/50 bg-sky-500/10 text-sky-200 transition hover:bg-sky-500/20"
+                                    title="Ülkeler &amp; Kotalar">
+                                    <i class="bi bi-flag"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('admin_user_edit', user_id=user.id) }}"
+                                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-emerald-500/50 hover:text-emerald-200"
+                                    title="Düzenle">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if not user.is_admin or users.total > 1 %}
+                                <button type="button" data-user-id="{{ user.id }}" {% if user.is_admin and
+                                    user.id==current_user.id %}disabled{% endif %}
+                                    class="delete-user-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-red-500/60 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                    title="Sil">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                            Filtre kriterlerine uygun kullanıcı bulunamadı.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if users.pages > 1 %}
+        <div
+            class="flex flex-col gap-3 border-t border-slate-800/60 bg-slate-950/80 px-6 py-4 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
+            <p>Sayfa {{ users.page }} / {{ users.pages }} | Toplam {{ users.total }} kayıt</p>
+            <div class="flex items-center gap-2">
+                {% if users.has_prev %}
+                <a href="{{ url_for('admin_users', page=users.prev_num, **filters) }}"
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800/60">
+                    <i class="bi bi-arrow-left"></i>
+                    Önceki
+                </a>
+                {% else %}
+                <span
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-900 bg-slate-950/60 px-3 py-1 text-xs text-slate-500">
+                    <i class="bi bi-arrow-left"></i>
+                    Önceki
+                </span>
+                {% endif %}
+
+                <span class="rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs text-slate-300">{{
+                    users.page }}</span>
+
+                {% if users.has_next %}
+                <a href="{{ url_for('admin_users', page=users.next_num, **filters) }}"
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800/60">
+                    Sonraki
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                {% else %}
+                <span
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-900 bg-slate-950/60 px-3 py-1 text-xs text-slate-500">
+                    Sonraki
+                    <i class="bi bi-arrow-right"></i>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if users.total == 0 %}
+<div
+    class="mt-6 flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-slate-700 bg-slate-950/60 px-8 py-16 text-center">
+    <i class="bi bi-people text-5xl text-slate-600"></i>
+    <p class="text-sm text-slate-400">Henüz kullanıcı eklenmemiş.</p>
+    <a href="{{ url_for('admin_user_create') }}"
+        class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+        <i class="bi bi-person-plus"></i>
+        İlk Kullanıcıyı Ekle
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function deleteUser( userId ) {
+        const confirmed = await confirmDelete(
+            'Bu kullanıcıyı silmek istediğinizden emin misiniz?<br><br>' +
+            '<span class="text-xs text-red-300">⚠️ Kullanıcının tüm randevuları ve kotaları da silinecektir!</span>'
+        );
+
+        if ( !confirmed ) return;
+
+        fetch( `/admin/users/${userId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        } )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    showAlert( 'success', data.message );
+                    setTimeout( () => window.location.reload(), 1200 );
+                } else {
+                    showAlert( 'danger', data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Error:', error );
+                showAlert( 'danger', 'Bir hata oluştu: ' + error );
+            } );
+    }
+
+    document.querySelectorAll( '.delete-user-btn' ).forEach( button => {
+        button.addEventListener( 'click', () => {
+            const userId = button.getAttribute( 'data-user-id' );
+            if ( !button.disabled ) {
+                deleteUser( userId );
+            }
+        } );
+    } );
+
+    document.getElementById( 'resetUserFilters' )?.addEventListener( 'click', () => {
+        window.location.href = "{{ url_for('admin_users') }}";
+    } );
+</script>
+{% endblock %}

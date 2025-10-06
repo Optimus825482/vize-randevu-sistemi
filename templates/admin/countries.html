@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Ülke Yönetimi{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Sistem Yönetimi</p>
+        <h1 class="mt-3 flex items-center gap-3 text-2xl font-semibold text-slate-100">
+            <i class="bi bi-flag text-emerald-400"></i>
+            Ülke Yönetimi
+        </h1>
+        <p class="mt-2 text-sm text-slate-400">Başvuru süreçlerinde kullanılacak ülkeleri yapılandırın, durumlarını
+            güncelleyin ve yeni kayıtlar ekleyin.</p>
+    </div>
+    <a href="{{ url_for('admin_country_create') }}"
+        class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+        <i class="bi bi-plus-circle"></i>
+        <span>Yeni Ülke Ekle</span>
+    </a>
+</div>
+
+<div class="rounded-3xl border border-slate-800/70 bg-slate-950/80 shadow-xl">
+    <div class="border-b border-slate-800/60 px-6 py-5">
+        <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+            <i class="bi bi-collection text-lg text-slate-400"></i>
+            Kayıtlı Ülkeler
+        </h2>
+    </div>
+    <div class="px-6 py-6">
+        {% if countries %}
+        <div class="overflow-hidden rounded-2xl border border-slate-800/70">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                    <thead class="bg-slate-950/80 text-xs uppercase tracking-[0.3em] text-slate-500">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left">ID</th>
+                            <th scope="col" class="px-6 py-4 text-left">Bayrak</th>
+                            <th scope="col" class="px-6 py-4 text-left">Ülke Adı</th>
+                            <th scope="col" class="px-6 py-4 text-left">Kod</th>
+                            <th scope="col" class="px-6 py-4 text-left">Durum</th>
+                            <th scope="col" class="px-6 py-4 text-left">Oluşturma</th>
+                            <th scope="col" class="px-6 py-4 text-right">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/70 bg-slate-950/60">
+                        {% for country in countries %}
+                        <tr class="hover:bg-slate-900/60">
+                            <td class="px-6 py-4 font-semibold text-slate-200">#{{ country.id }}</td>
+                            <td class="px-6 py-4">
+                                <img class="country-flag w-12 h-9 rounded border border-slate-700/50 object-cover"
+                                    data-country-code="{{ country.code }}" alt="{{ country.name }} bayrağı"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                                <span class="text-2xl hidden">{{ country.flag_emoji or '🏳️' }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-slate-300">{{ country.name }}</td>
+                            <td class="px-6 py-4">
+                                <span
+                                    class="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-200">
+                                    {{ country.code }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if country.is_active %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-200">Aktif</span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-400">{{ country.created_at.strftime('%d.%m.%Y') }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ url_for('admin_country_edit', country_id=country.id) }}"
+                                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-emerald-500/50 hover:text-emerald-200"
+                                        title="Düzenle">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" data-country-id="{{ country.id }}"
+                                        class="delete-country-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-red-500/60 hover:text-red-200"
+                                        title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div
+            class="flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-slate-700 bg-slate-950/60 px-8 py-16 text-center">
+            <i class="bi bi-flag text-5xl text-slate-600"></i>
+            <p class="text-sm text-slate-400">Henüz ülke eklenmemiş.</p>
+            <a href="{{ url_for('admin_country_create') }}"
+                class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+                <i class="bi bi-plus-circle"></i>
+                İlk Ülkeyi Ekle
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ISO 3166-1 alpha-3 to alpha-2 dönüşümü
+    const alpha3ToAlpha2 = {
+        'USA': 'US', 'GBR': 'GB', 'DEU': 'DE', 'FRA': 'FR', 'ITA': 'IT', 'ESP': 'ES',
+        'CAN': 'CA', 'AUS': 'AU', 'JPN': 'JP', 'KOR': 'KR', 'CHN': 'CN', 'IND': 'IN',
+        'BRA': 'BR', 'MEX': 'MX', 'RUS': 'RU', 'TUR': 'TR', 'SAU': 'SA', 'ARE': 'AE',
+        'EGY': 'EG', 'ZAF': 'ZA', 'NGA': 'NG', 'ARG': 'AR', 'CHL': 'CL', 'COL': 'CO',
+        'PER': 'PE', 'NLD': 'NL', 'BEL': 'BE', 'CHE': 'CH', 'AUT': 'AT', 'SWE': 'SE',
+        'NOR': 'NO', 'DNK': 'DK', 'FIN': 'FI', 'POL': 'PL', 'CZE': 'CZ', 'HUN': 'HU',
+        'ROU': 'RO', 'BGR': 'BG', 'GRC': 'GR', 'PRT': 'PT', 'IRL': 'IE', 'ISL': 'IS',
+        'HRV': 'HR', 'SRB': 'RS', 'UKR': 'UA', 'SGP': 'SG', 'MYS': 'MY', 'THA': 'TH',
+        'VNM': 'VN', 'IDN': 'ID', 'PHL': 'PH', 'NZL': 'NZ', 'ISR': 'IL', 'PAK': 'PK',
+        'BGD': 'BD', 'IRN': 'IR', 'IRQ': 'IQ', 'KWT': 'KW', 'QAT': 'QA', 'OMN': 'OM',
+        'JOR': 'JO', 'LBN': 'LB', 'MAR': 'MA', 'DZA': 'DZ', 'TUN': 'TN', 'LBY': 'LY',
+        'KEN': 'KE', 'ETH': 'ET', 'GHA': 'GH'
+    };
+
+    // Sayfa yüklendiğinde bayrak imglerini düzelt
+    document.addEventListener( 'DOMContentLoaded', () => {
+        document.querySelectorAll( 'img[alt*="bayrağı"]' ).forEach( img => {
+            const alt = img.alt;
+            const row = img.closest( 'tr' );
+            if ( row ) {
+                const codeSpan = row.querySelector( 'span.inline-flex.items-center' );
+                if ( codeSpan ) {
+                    const code = codeSpan.textContent.trim();
+                    const alpha2 = alpha3ToAlpha2[code] || code.substring( 0, 2 );
+                    img.src = `https://flagcdn.com/48x36/${alpha2.toLowerCase()}.png`;
+                    img.srcset = `https://flagcdn.com/96x72/${alpha2.toLowerCase()}.png 2x`;
+                }
+            }
+        } );
+    } );
+
+    async function deleteCountry( countryId ) {
+        const confirmed = await confirmDelete(
+            'Bu ülkeyi silmek istediğinizden emin misiniz?<br><br>' +
+            '<span class="text-xs text-red-300">⚠️ Bu ülkeye bağlı tüm kotalar ve randevular da silinecektir!</span>'
+        );
+
+        if ( !confirmed ) return;
+
+        fetch( `/admin/countries/${countryId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        } )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    showAlert( 'success', data.message );
+                    setTimeout( () => window.location.reload(), 1200 );
+                } else {
+                    showAlert( 'danger', data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Error:', error );
+                showAlert( 'danger', 'Bir hata oluştu: ' + error );
+            } );
+    }
+
+    document.querySelectorAll( '.delete-country-btn' ).forEach( button => {
+        button.addEventListener( 'click', () => {
+            const countryId = button.getAttribute( 'data-country-id' );
+            deleteCountry( countryId );
+        } );
+    } );
+</script>
+{% endblock %}

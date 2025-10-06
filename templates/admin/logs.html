@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistem Logları{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <!-- Başlık -->
+    <div class="mb-6 md:mb-8">
+        <h1 class="text-2xl font-bold text-slate-100 md:text-3xl">
+            <i class="bi bi-clock-history me-2 md:me-3"></i>
+            Sistem Logları
+        </h1>
+        <p class="mt-2 text-xs text-slate-400 md:text-sm">Sistemdeki tüm kullanıcı aktivitelerini izleyin</p>
+    </div>
+
+    <!-- İstatistikler -->
+    <div class="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div class="rounded-xl border border-emerald-500/20 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-box-arrow-in-right text-3xl text-emerald-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ action_counts.get('login', 0) }}</div>
+            <div class="text-xs text-slate-400">Giriş</div>
+        </div>
+
+        <div class="rounded-xl border border-sky-500/20 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-plus-circle text-3xl text-sky-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ action_counts.get('create', 0) }}</div>
+            <div class="text-xs text-slate-400">Oluşturma</div>
+        </div>
+
+        <div class="rounded-xl border border-amber-500/20 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-pencil-square text-3xl text-amber-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ action_counts.get('update', 0) }}</div>
+            <div class="text-xs text-slate-400">Güncelleme</div>
+        </div>
+
+        <div class="rounded-xl border border-red-500/20 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-trash text-3xl text-red-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ action_counts.get('delete', 0) }}</div>
+            <div class="text-xs text-slate-400">Silme</div>
+        </div>
+
+        <div class="rounded-xl border border-purple-500/20 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-eye text-3xl text-purple-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ action_counts.get('view', 0) }}</div>
+            <div class="text-xs text-slate-400">Görüntüleme</div>
+        </div>
+
+        <div class="rounded-xl border border-slate-500/20 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-three-dots text-3xl text-slate-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ action_counts.get('other', 0) }}</div>
+            <div class="text-xs text-slate-400">Diğer</div>
+        </div>
+    </div>
+
+    <!-- Cihaz İstatistikleri -->
+    <div class="mb-8 grid grid-cols-3 gap-4">
+        <div class="rounded-xl border border-white/5 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-display text-3xl text-sky-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ device_counts.get('Desktop', 0) }}</div>
+            <div class="text-xs text-slate-400">Masaüstü</div>
+        </div>
+
+        <div class="rounded-xl border border-white/5 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-phone text-3xl text-emerald-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ device_counts.get('Mobile', 0) }}</div>
+            <div class="text-xs text-slate-400">Mobil</div>
+        </div>
+
+        <div class="rounded-xl border border-white/5 bg-slate-900/60 p-4 text-center">
+            <i class="bi bi-tablet text-3xl text-purple-400"></i>
+            <div class="mt-2 text-2xl font-bold text-slate-100">{{ device_counts.get('Tablet', 0) }}</div>
+            <div class="text-xs text-slate-400">Tablet</div>
+        </div>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="mb-6 rounded-xl border border-white/5 bg-slate-900/60 p-6">
+        <div class="mb-4 flex items-center gap-2">
+            <i class="bi bi-funnel text-emerald-400"></i>
+            <h2 class="text-lg font-semibold text-slate-100">Filtreler</h2>
+        </div>
+
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">Arama</label>
+                    <input type="text" name="q" value="{{ filters.q }}"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                        placeholder="Kullanıcı, işlem...">
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">Danışman</label>
+                    <select name="user_id"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none">
+                        <option value="">Tümü</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if filters.user_id|string==user.id|string %}selected{% endif
+                            %}>
+                            {{ user.full_name }} ({{ user.username }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">İşlem Tipi</label>
+                    <select name="action_type"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none">
+                        <option value="all">Tümü</option>
+                        <option value="login" {% if filters.action_type=='login' %}selected{% endif %}>Giriş</option>
+                        <option value="logout" {% if filters.action_type=='logout' %}selected{% endif %}>Çıkış</option>
+                        <option value="create" {% if filters.action_type=='create' %}selected{% endif %}>Oluşturma
+                        </option>
+                        <option value="update" {% if filters.action_type=='update' %}selected{% endif %}>Güncelleme
+                        </option>
+                        <option value="delete" {% if filters.action_type=='delete' %}selected{% endif %}>Silme</option>
+                        <option value="view" {% if filters.action_type=='view' %}selected{% endif %}>Görüntüleme
+                        </option>
+                        <option value="other" {% if filters.action_type=='other' %}selected{% endif %}>Diğer</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">Cihaz Tipi</label>
+                    <select name="device_type"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none">
+                        <option value="all">Tümü</option>
+                        <option value="Desktop" {% if filters.device_type=='Desktop' %}selected{% endif %}>Masaüstü
+                        </option>
+                        <option value="Mobile" {% if filters.device_type=='Mobile' %}selected{% endif %}>Mobil</option>
+                        <option value="Tablet" {% if filters.device_type=='Tablet' %}selected{% endif %}>Tablet</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">IP Adresi</label>
+                    <input type="text" name="ip_address" value="{{ filters.ip_address }}"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                        placeholder="192.168.1.1">
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">Başlangıç Tarihi</label>
+                    <input type="date" name="date_from" value="{{ filters.date_from }}"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">Bitiş Tarihi</label>
+                    <input type="date" name="date_to" value="{{ filters.date_to }}"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm text-slate-300">Sayfa Başına</label>
+                    <select name="per_page"
+                        class="w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none">
+                        {% for choice in per_page_choices %}
+                        <option value="{{ choice }}" {% if filters.per_page==choice %}selected{% endif %}>{{ choice }}
+                            kayıt</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit"
+                    class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                    <i class="bi bi-search me-1"></i> Filtrele
+                </button>
+                <a href="{{ url_for('admin_logs') }}"
+                    class="rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-700">
+                    <i class="bi bi-x-circle me-1"></i> Temizle
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Log Tablosu -->
+    <div class="rounded-xl border border-white/5 bg-slate-900/60 overflow-hidden">
+        <div class="border-b border-white/5 p-4">
+            <div class="flex items-center gap-2">
+                <i class="bi bi-list-ul text-emerald-400"></i>
+                <h2 class="text-lg font-semibold text-slate-100">Log Kayıtları</h2>
+                <span class="ml-auto text-sm text-slate-400">Toplam: {{ logs.total }} kayıt</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-white/5 bg-slate-800/50">
+                    <tr class="text-left text-slate-300">
+                        <th class="px-3 py-3 w-16">ID</th>
+                        <th class="px-3 py-3 w-32">Tarih</th>
+                        <th class="px-3 py-3">Kullanıcı</th>
+                        <th class="px-3 py-3 w-32">İşlem Tipi</th>
+                        <th class="px-3 py-3">İşlem</th>
+                        <th class="px-3 py-3 w-28">IP</th>
+                        <th class="px-3 py-3 w-32">Cihaz</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% if logs.items %}
+                    {% for log in logs.items %}
+                    <tr class="log-row cursor-pointer hover:bg-slate-800/50 transition-colors"
+                        data-log-id="{{ log.id }}">
+                        <td class="px-3 py-3 text-slate-500">#{{ log.id }}</td>
+                        <td class="px-3 py-3">
+                            <div class="text-slate-200 text-xs">{{ log.created_at.strftime('%d.%m.%Y') }}</div>
+                            <div class="text-xs text-slate-500">{{ log.created_at.strftime('%H:%M') }}</div>
+                        </td>
+                        <td class="px-3 py-3">
+                            {% if log.user %}
+                            <div class="font-medium text-slate-200 text-sm">{{ log.user.full_name }}</div>
+                            <div class="text-xs text-slate-500">@{{ log.user.username }}</div>
+                            {% else %}
+                            <span class="text-slate-500 text-sm">Sistem</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-3">
+                            <span
+                                class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-semibold {{ get_action_type_badge(log.action_type) }}">
+                                <i class="{{ get_action_type_icon(log.action_type) }} me-1"></i>
+                                {{ log.action_type|title }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-3 text-slate-300 text-sm">{{ log.action }}</td>
+                        <td class="px-3 py-3">
+                            <code class="text-xs text-emerald-400">{{ log.ip_address or 'N/A' }}</code>
+                        </td>
+                        <td class="px-3 py-3">
+                            <div class="flex items-center gap-1 text-slate-300">
+                                <i class="{{ get_device_icon(log.device_type) }} text-sm"></i>
+                                <span class="text-xs">{{ log.device_type }}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Detay Satırı (Gizli) -->
+                    <tr id="details-{{ log.id }}" class="hidden bg-slate-800/30">
+                        <td colspan="7" class="px-3 py-4">
+                            <div class="flex flex-col gap-3 md:flex-row md:items-start md:gap-6">
+                                <div class="flex-1">
+                                    <h4 class="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-400">
+                                        <i class="bi bi-info-circle"></i>
+                                        Detaylar
+                                    </h4>
+                                    <p class="text-sm text-slate-300">
+                                        {% if log.details %}
+                                        {{ log.details }}
+                                        {% else %}
+                                        <span class="text-slate-500 italic">Detay bilgisi yok</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="flex gap-6 text-xs">
+                                    <div>
+                                        <div class="mb-1 text-slate-500">Tarayıcı</div>
+                                        <div class="text-slate-300">{{ log.browser or 'N/A' }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="mb-1 text-slate-500">İşletim Sistemi</div>
+                                        <div class="text-slate-300">{{ log.os or 'N/A' }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="mb-1 text-slate-500">User Agent</div>
+                                        <div class="max-w-xs truncate text-slate-400">{{ log.user_agent or 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center">
+                            <i class="bi bi-inbox text-5xl text-slate-700"></i>
+                            <p class="mt-2 text-slate-500">Kayıt bulunamadı</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            document.addEventListener( 'DOMContentLoaded', function () {
+                const logRows = document.querySelectorAll( '.log-row' );
+
+                logRows.forEach( row => {
+                    row.addEventListener( 'click', function () {
+                        const logId = this.getAttribute( 'data-log-id' );
+                        const detailsRow = document.getElementById( 'details-' + logId );
+
+                        if ( detailsRow.classList.contains( 'hidden' ) ) {
+                            // Diğer açık detayları kapat
+                            document.querySelectorAll( 'tr[id^="details-"]' ).forEach( r => {
+                                r.classList.add( 'hidden' );
+                            } );
+                            // Bu detayı aç
+                            detailsRow.classList.remove( 'hidden' );
+                        } else {
+                            // Bu detayı kapat
+                            detailsRow.classList.add( 'hidden' );
+                        }
+                    } );
+                } );
+            } );
+        </script>
+
+        <!-- Pagination -->
+        {% if logs.pages > 1 %}
+        <div class="border-t border-white/5 p-4">
+            <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
+                <div class="w-full sm:w-auto">
+                    {% if logs.has_prev %}
+                    <a href="{{ url_for('admin_logs', page=logs.prev_num, **filters) }}"
+                        class="inline-flex w-full items-center justify-center rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 sm:w-auto">
+                        <i class="bi bi-chevron-left me-1"></i> <span class="hidden sm:inline">Önceki</span><span
+                            class="sm:hidden">Önceki Sayfa</span>
+                    </a>
+                    {% else %}
+                    <button disabled
+                        class="inline-flex w-full items-center justify-center rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm text-slate-600 opacity-50 cursor-not-allowed sm:w-auto">
+                        <i class="bi bi-chevron-left me-1"></i> <span class="hidden sm:inline">Önceki</span><span
+                            class="sm:hidden">Önceki Sayfa</span>
+                    </button>
+                    {% endif %}
+                </div>
+
+                <div class="text-center">
+                    <span class="text-xs text-slate-400 sm:text-sm">
+                        <span class="block sm:inline">Sayfa <span class="font-semibold text-emerald-400">{{ logs.page
+                                }}</span> / {{ logs.pages }}</span>
+                        <span class="mx-2 hidden sm:inline">·</span>
+                        <span class="block sm:inline">Toplam: <span class="font-semibold text-slate-300">{{ logs.total
+                                }}</span> kayıt</span>
+                    </span>
+                </div>
+
+                <div class="w-full sm:w-auto">
+                    {% if logs.has_next %}
+                    <a href="{{ url_for('admin_logs', page=logs.next_num, **filters) }}"
+                        class="inline-flex w-full items-center justify-center rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 sm:w-auto">
+                        <span class="hidden sm:inline">Sonraki</span><span class="sm:hidden">Sonraki Sayfa</span> <i
+                            class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                    {% else %}
+                    <button disabled
+                        class="inline-flex w-full items-center justify-center rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm text-slate-600 opacity-50 cursor-not-allowed sm:w-auto">
+                        <span class="hidden sm:inline">Sonraki</span><span class="sm:hidden">Sonraki Sayfa</span> <i
+                            class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

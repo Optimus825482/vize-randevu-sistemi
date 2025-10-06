@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Randevularım{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Select ve option elementleri için renk düzeltmesi */
+    select {
+        color: #e2e8f0 !important;
+        background-color: rgba(15, 23, 42, 0.6) !important;
+    }
+
+    select option {
+        background-color: #0f172a !important;
+        color: #e2e8f0 !important;
+    }
+
+    select option:hover {
+        background-color: #1e293b !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Randevu Yönetimi</p>
+        <h1 class="mt-3 flex items-center gap-3 text-2xl font-semibold text-slate-100">
+            <i class="bi bi-calendar2-week text-emerald-400"></i>
+            Randevularım
+        </h1>
+        <p class="mt-2 max-w-xl text-sm text-slate-400">Tüm başvurularınızı tek ekrandan takip edin, durumlarına göre
+            filtreleyin ve gerekirse güncelleme talepleri oluşturun.</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3">
+        <button type="button" id="newAppointmentBtn"
+            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+            <i class="bi bi-plus-circle"></i>
+            <span>Yeni Randevu Ekle</span>
+        </button>
+        <a href="{{ url_for('dashboard') }}"
+            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-100">
+            <i class="bi bi-arrow-left"></i>
+            <span>Panele Dön</span>
+        </a>
+    </div>
+</section>
+
+<form method="get"
+    class="mt-6 grid grid-cols-1 gap-4 rounded-3xl border border-slate-800/80 bg-slate-950/80 p-6 shadow-xl md:grid-cols-12 md:gap-6">
+    <div class="md:col-span-4">
+        <label for="status"
+            class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Durum</label>
+        <select id="status" name="status"
+            class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+            <option value="all" {{ 'selected' if status_filter=='all' }}>Tümü</option>
+            {% for option in status_options %}
+            <option value="{{ option }}" {{ 'selected' if status_filter==option }}>{{ option }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="md:col-span-4">
+        <label for="country_id"
+            class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Ülke</label>
+        <select id="country_id" name="country_id"
+            class="w-full rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+            <option value="">Tümü</option>
+            {% for country in assigned_countries %}
+            <option value="{{ country.id }}" {{ 'selected' if country_filter==country.id }}>
+                {% if country.flag_emoji %}{{ country.flag_emoji }} {% endif %}{{ country.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="md:col-span-2 flex items-end">
+        <button type="submit"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-950">
+            <i class="bi bi-funnel"></i>
+            Uygula
+        </button>
+    </div>
+    <div class="md:col-span-2 flex items-end">
+        <a href="{{ url_for('user_appointments') }}"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-700 hover:text-slate-100">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Sıfırla
+        </a>
+    </div>
+</form>
+
+<div class="mt-8 rounded-3xl border border-slate-800/70 bg-slate-950/80 shadow-xl">
+    {% if appointments %}
+    <div class="overflow-hidden rounded-2xl border border-white/8 shadow-inner shadow-black/20">
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-slate-800 text-xs sm:text-sm">
+                <thead
+                    class="bg-slate-950/80 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-500">
+                    <tr>
+                        <th class="px-2 sm:px-3 py-3 text-left w-[8%] min-w-[50px]">ID</th>
+                        <th class="px-2 sm:px-3 py-3 text-left w-[18%] min-w-[120px]">Ülke</th>
+                        <th class="px-2 sm:px-3 py-3 text-left w-[20%] min-w-[130px]">Başvuran</th>
+                        <th class="px-2 sm:px-3 py-3 text-left w-[12%] min-w-[90px]">Pasaport</th>
+                        <th class="px-2 sm:px-3 py-3 text-left w-[14%] min-w-[100px]">Durum</th>
+                        <th class="px-2 sm:px-3 py-3 text-left w-[13%] min-w-[110px]">Oluşturma</th>
+                        <th class="px-2 sm:px-3 py-3 text-right w-[15%] min-w-[130px]">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/70 bg-slate-950/60 text-sm text-slate-300">
+                    {% for apt in appointments %}
+                    <tr class="transition hover:bg-slate-900/60">
+                        <td class="px-2 sm:px-3 py-3 font-semibold text-slate-200 whitespace-nowrap">
+                            #{{ apt.id }}</td>
+                        <td class="px-2 sm:px-3 py-3 text-slate-300">
+                            <span class="flex items-center gap-1.5">
+                                <img class="country-flag w-7 h-5 rounded border border-slate-700/50 object-cover flex-shrink-0"
+                                    data-country-code="{{ apt.country.code }}" alt="{{ apt.country.name }} bayrağı"
+                                    onerror="this.style.display='none'">
+                                <span class="truncate">{{ apt.country.name }}</span>
+                            </span>
+                        </td>
+                        <td class="px-2 sm:px-3 py-3 text-slate-300 truncate">{{ apt.applicant_name }} {{
+                            apt.applicant_surname }}</td>
+                        <td class="px-2 sm:px-3 py-3 text-slate-400 truncate">{{ apt.passport_number }}</td>
+                        <td class="px-2 sm:px-3 py-3">
+                            {% if apt.status == 'Bekleme' %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-amber-200 whitespace-nowrap">{{
+                                apt.status }}</span>
+                            {% elif apt.status == 'Süreç Başlatıldı' %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-sky-200 whitespace-nowrap">{{
+                                apt.status }}</span>
+                            {% elif apt.status == 'Tamamlandı' %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-200 whitespace-nowrap">{{
+                                apt.status }}</span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-red-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-red-200 whitespace-nowrap">{{
+                                apt.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-2 sm:px-3 py-3 text-slate-400 text-[10px] whitespace-nowrap">
+                            {{ apt.created_at.strftime('%d.%m.%Y') }}<br class="hidden lg:inline">
+                            <span class="hidden lg:inline text-[9px]">{{ apt.created_at.strftime('%H:%M') }}</span>
+                        </td>
+                        <td class="px-2 sm:px-3 py-3 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="{{ url_for('user_appointments_by_country', country_id=apt.country_id) }}"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-sky-500/50 hover:text-sky-200 text-xs"
+                                    title="Bu ülke için randevuları gör">
+                                    <i class="bi bi-flag text-[11px]"></i>
+                                </a>
+                                {% if apt.can_edit() %}
+                                <a href="{{ url_for('user_appointment_edit', apt_id=apt.id) }}"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-100 text-xs"
+                                    title="Düzenle">
+                                    <i class="bi bi-pencil text-[11px]"></i>
+                                </a>
+                                <button type="button"
+                                    data-delete-url="{{ url_for('user_appointment_delete', apt_id=apt.id) }}"
+                                    class="delete-appointment-btn inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-950 text-slate-300 transition hover:border-red-500/60 hover:text-red-200 text-xs"
+                                    title="Sil">
+                                    <i class="bi bi-trash text-[11px]"></i>
+                                </button>
+                                {% else %}
+                                <a href="{{ url_for('user_appointment_update_request', apt_id=apt.id) }}"
+                                    class="inline-flex items-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-1.5 py-1 text-[10px] font-semibold text-amber-100 transition hover:bg-amber-400/20 whitespace-nowrap"
+                                    title="Güncelleme talebi gönder">
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span class="hidden xl:inline">Güncelle</span>
+                                </a>
+                                <button type="button" onclick="requestDelete({{ apt.id }})"
+                                    class="inline-flex items-center gap-0.5 rounded-lg border border-red-400/40 bg-red-400/10 px-1.5 py-1 text-[10px] font-semibold text-red-100 transition hover:bg-red-400/20 whitespace-nowrap"
+                                    title="Silme talebi gönder">
+                                    <i class="bi bi-trash"></i>
+                                    <span class="hidden xl:inline">Sil</span>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center text-slate-500">
+        <i class="bi bi-inbox text-4xl text-slate-600"></i>
+        <p class="text-sm">Seçili kriterlere uygun randevu kaydı bulunamadı.</p>
+        <a href="{{ url_for('dashboard') }}"
+            class="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+            <i class="bi bi-plus-circle"></i>
+            Yeni Randevu Oluştur
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Ülke Seçimi Modal -->
+<div id="countrySelectModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="w-full max-w-2xl mx-4 rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl transform scale-95 transition-transform duration-300"
+        id="countrySelectModalContent">
+        <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+            <h3 class="text-lg font-semibold text-slate-100">Ülke Seçin</h3>
+            <button type="button" id="closeCountryModal"
+                class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-slate-200">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <p class="mb-4 text-sm text-slate-400">
+                Randevu eklemek istediğiniz ülkeyi seçin. Sadece kotanız olan ülkeler listelenmektedir.
+            </p>
+            <div id="countryList" class="grid gap-3 max-h-96 overflow-y-auto">
+                <!-- Ülkeler JavaScript ile yüklenecek -->
+                <div class="flex items-center justify-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ISO 3166-1 alpha-3 to alpha-2 dönüşümü
+    const alpha3ToAlpha2 = {
+        'USA': 'US', 'GBR': 'GB', 'DEU': 'DE', 'FRA': 'FR', 'ITA': 'IT', 'ESP': 'ES',
+        'CAN': 'CA', 'AUS': 'AU', 'JPN': 'JP', 'KOR': 'KR', 'CHN': 'CN', 'IND': 'IN',
+        'BRA': 'BR', 'MEX': 'MX', 'RUS': 'RU', 'TUR': 'TR', 'SAU': 'SA', 'ARE': 'AE',
+        'EGY': 'EG', 'ZAF': 'ZA', 'NGA': 'NG', 'ARG': 'AR', 'CHL': 'CL', 'COL': 'CO',
+        'PER': 'PE', 'NLD': 'NL', 'BEL': 'BE', 'CHE': 'CH', 'AUT': 'AT', 'SWE': 'SE',
+        'NOR': 'NO', 'DNK': 'DK', 'FIN': 'FI', 'POL': 'PL', 'CZE': 'CZ', 'HUN': 'HU',
+        'ROU': 'RO', 'BGR': 'BG', 'GRC': 'GR', 'PRT': 'PT', 'IRL': 'IE', 'ISL': 'IS',
+        'HRV': 'HR', 'SRB': 'RS', 'UKR': 'UA', 'SGP': 'SG', 'MYS': 'MY', 'THA': 'TH',
+        'VNM': 'VN', 'IDN': 'ID', 'PHL': 'PH', 'NZL': 'NZ', 'ISR': 'IL', 'PAK': 'PK',
+        'BGD': 'BD', 'IRN': 'IR', 'IRQ': 'IQ', 'KWT': 'KW', 'QAT': 'QA', 'OMN': 'OM',
+        'JOR': 'JO', 'LBN': 'LB', 'MAR': 'MA', 'DZA': 'DZ', 'TUN': 'TN', 'LBY': 'LY',
+        'KEN': 'KE', 'ETH': 'ET', 'GHA': 'GH'
+    };
+
+    document.addEventListener( 'DOMContentLoaded', () => {
+        // Bayrak görsellerini yükle
+        document.querySelectorAll( '.country-flag' ).forEach( img => {
+            const code = img.getAttribute( 'data-country-code' );
+            if ( code ) {
+                const alpha2 = alpha3ToAlpha2[code] || code.substring( 0, 2 );
+                img.src = `https://flagcdn.com/48x36/${alpha2.toLowerCase()}.png`;
+                img.srcset = `https://flagcdn.com/96x72/${alpha2.toLowerCase()}.png 2x`;
+            }
+        } );
+
+        document.querySelectorAll( '.delete-appointment-btn' ).forEach( button => {
+            button.addEventListener( 'click', () => {
+                const url = button.getAttribute( 'data-delete-url' );
+                if ( url ) {
+                    deleteItem( url, () => {
+                        button.closest( 'tr' )?.remove();
+                    } );
+                }
+            } );
+        } );
+
+        // Modal işlemleri
+        const modal = document.getElementById( 'countrySelectModal' );
+        const modalContent = document.getElementById( 'countrySelectModalContent' );
+        const newAppointmentBtn = document.getElementById( 'newAppointmentBtn' );
+        const closeCountryModal = document.getElementById( 'closeCountryModal' );
+        const countryList = document.getElementById( 'countryList' );
+
+        // Modal açma
+        newAppointmentBtn.addEventListener( 'click', async () => {
+            modal.classList.remove( 'pointer-events-none', 'opacity-0' );
+            modalContent.classList.remove( 'scale-95' );
+            modalContent.classList.add( 'scale-100' );
+
+            // Ülkeleri yükle
+            await loadCountriesWithQuota();
+        } );
+
+        // Modal kapatma
+        const closeModal = () => {
+            modal.classList.add( 'opacity-0' );
+            modalContent.classList.remove( 'scale-100' );
+            modalContent.classList.add( 'scale-95' );
+            setTimeout( () => {
+                modal.classList.add( 'pointer-events-none' );
+            }, 300 );
+        };
+
+        closeCountryModal.addEventListener( 'click', closeModal );
+        modal.addEventListener( 'click', ( e ) => {
+            if ( e.target === modal ) closeModal();
+        } );
+
+        // Ülkeleri yükle
+        async function loadCountriesWithQuota() {
+            countryList.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div></div>';
+
+            try {
+                const response = await fetch( '/api/user/quota-info' );
+                const data = await response.json();
+
+                if ( !data.success ) {
+                    throw new Error( data.message || 'Veri yüklenemedi' );
+                }
+
+                const countriesWithQuota = data.countries.filter( c => c.remaining_quota > 0 );
+
+                if ( countriesWithQuota.length === 0 ) {
+                    countryList.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 text-center">
+                            <i class="bi bi-exclamation-circle text-4xl text-amber-400 mb-3"></i>
+                            <p class="text-slate-300 font-semibold">Kotanız Olan Ülke Yok</p>
+                            <p class="text-sm text-slate-400 mt-2">Şu anda randevu ekleyebileceğiniz aktif kotanız bulunmamaktadır.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                countryList.innerHTML = '';
+                countriesWithQuota.forEach( country => {
+                    const div = document.createElement( 'div' );
+                    div.className = 'flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-emerald-500/40 transition cursor-pointer';
+                    div.onclick = () => {
+                        window.location.href = `/user/appointments/country/${country.country_id}`;
+                    };
+
+                    const alpha2 = alpha3ToAlpha2[country.country_code] || country.country_code.substring( 0, 2 );
+
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <img src="https://flagcdn.com/48x36/${alpha2.toLowerCase()}.png"
+                                srcset="https://flagcdn.com/96x72/${alpha2.toLowerCase()}.png 2x"
+                                class="w-12 h-9 rounded border border-slate-700/50 object-cover"
+                                alt="${country.country_name} bayrağı"
+                                onerror="this.style.display='none'">
+                            <div>
+                                <p class="font-semibold text-slate-100">${country.country_name}</p>
+                                <p class="text-xs text-slate-400">Kalan Kota: ${country.remaining_quota}/${country.quota_limit}</p>
+                            </div>
+                        </div>
+                        <i class="bi bi-arrow-right text-slate-400"></i>
+                    `;
+
+                    countryList.appendChild( div );
+                } );
+
+            } catch ( error ) {
+                console.error( 'Ülkeler yüklenirken hata:', error );
+                countryList.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8 text-center">
+                        <i class="bi bi-exclamation-triangle text-4xl text-red-400 mb-3"></i>
+                        <p class="text-slate-300 font-semibold">Hata Oluştu</p>
+                        <p class="text-sm text-slate-400 mt-2">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    } );
+
+    // Silme talebi fonksiyonu
+    function requestDelete( aptId ) {
+        if ( !confirm( 'Bu randevu için silme talebi göndermek istediğinizden emin misiniz?' ) ) {
+            return;
+        }
+
+        const reason = prompt( 'Silme nedeninizi belirtiniz:' );
+        if ( !reason || reason.trim() === '' ) {
+            alert( 'Silme nedeni belirtmeniz gerekmektedir.' );
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append( 'reason', reason.trim() );
+
+        fetch( `/user/appointments/${aptId}/delete-request`, {
+            method: 'POST',
+            body: formData
+        } )
+            .then( response => response.json() )
+            .then( data => {
+                if ( data.success ) {
+                    alert( data.message );
+                    location.reload();
+                } else {
+                    alert( 'Hata: ' + data.message );
+                }
+            } )
+            .catch( error => {
+                console.error( 'Hata:', error );
+                alert( 'Talep gönderilirken bir hata oluştu.' );
+            } );
+    }
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
+import os
 
 from config import Config
 from models import db, User, Country, UserCountryQuota, Appointment, UpdateRequest
@@ -18,6 +19,59 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Bu sayfaya erişmek için giriş yapmalısınız.'
 login_manager.login_message_category = 'warning'
+
+# Railway için otomatik veritabanı kurulumu
+def init_database():
+    """Veritabanını başlat (Railway için)"""
+    try:
+        with app.app_context():
+            # Tabloları oluştur
+            db.create_all()
+            
+            # Admin kullanıcısı kontrolü
+            admin_username = app.config['ADMIN_USERNAME']
+            admin = User.query.filter_by(username=admin_username).first()
+            
+            if not admin:
+                admin = User(
+                    username=admin_username,
+                    email=app.config['ADMIN_EMAIL'],
+                    full_name='Sistem Yöneticisi',
+                    is_admin=True,
+                    is_active=True
+                )
+                admin.set_password(app.config['ADMIN_PASSWORD'])
+                db.session.add(admin)
+                db.session.commit()
+                print(f"✅ Admin kullanıcısı oluşturuldu: {admin_username}")
+            
+            # Örnek ülkeler kontrolü
+            if Country.query.count() == 0:
+                sample_countries = [
+                    {'name': 'Amerika Birleşik Devletleri', 'code': 'USA', 'flag_emoji': '🇺🇸'},
+                    {'name': 'İngiltere', 'code': 'GBR', 'flag_emoji': '🇬🇧'},
+                    {'name': 'Almanya', 'code': 'DEU', 'flag_emoji': '🇩🇪'},
+                    {'name': 'Fransa', 'code': 'FRA', 'flag_emoji': '🇫🇷'},
+                    {'name': 'İtalya', 'code': 'ITA', 'flag_emoji': '🇮🇹'},
+                    {'name': 'İspanya', 'code': 'ESP', 'flag_emoji': '🇪🇸'},
+                    {'name': 'Kanada', 'code': 'CAN', 'flag_emoji': '🇨🇦'},
+                    {'name': 'Avustralya', 'code': 'AUS', 'flag_emoji': '🇦🇺'},
+                    {'name': 'Japonya', 'code': 'JPN', 'flag_emoji': '🇯🇵'},
+                    {'name': 'Güney Kore', 'code': 'KOR', 'flag_emoji': '🇰🇷'},
+                ]
+                for country_data in sample_countries:
+                    country = Country(**country_data)
+                    db.session.add(country)
+                db.session.commit()
+                print(f"✅ {len(sample_countries)} örnek ülke eklendi")
+            
+            print("✅ Veritabanı hazır!")
+    except Exception as e:
+        print(f"⚠️ Veritabanı kurulum hatası: {e}")
+
+# Railway deployment için veritabanını başlat
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    init_database()
 
 @login_manager.user_loader
 def load_user(user_id):

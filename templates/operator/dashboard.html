@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Operatör Paneli{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-100">🎛️ Operatör Paneli</h1>
+            <p class="text-sm text-slate-400 mt-1">Sistem durumu, loglar ve veri yönetimi</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('dashboard') }}"
+                class="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-sm font-medium text-slate-200 shadow-sm hover:bg-slate-700/70">
+                <i class="bi bi-arrow-left"></i>
+                Ana Sayfa
+            </a>
+        </div>
+    </div>
+
+    <!-- Sistem İstatistikleri -->
+    <div class="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl border border-slate-800/70 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-6">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg bg-blue-500/20 p-3">
+                    <i class="bi bi-people text-2xl text-blue-400"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase">Kullanıcılar</p>
+                    <p class="text-2xl font-bold text-slate-100">{{ total_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-800/70 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg bg-emerald-500/20 p-3">
+                    <i class="bi bi-flag text-2xl text-emerald-400"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase">Ülkeler</p>
+                    <p class="text-2xl font-bold text-slate-100">{{ total_countries }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-800/70 bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-6">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg bg-amber-500/20 p-3">
+                    <i class="bi bi-calendar-check text-2xl text-amber-400"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase">Randevular</p>
+                    <p class="text-2xl font-bold text-slate-100">{{ total_appointments }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-800/70 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg bg-purple-500/20 p-3">
+                    <i class="bi bi-file-text text-2xl text-purple-400"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase">Log Kayıtları</p>
+                    <p class="text-2xl font-bold text-slate-100">{{ total_logs }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Randevu Durum İstatistikleri -->
+    <div class="rounded-xl border border-slate-800/70 bg-slate-900/70 p-6">
+        <h2 class="text-xl font-semibold text-slate-100 mb-4">
+            <i class="bi bi-bar-chart text-indigo-400"></i>
+            Randevu Durum Dağılımı
+        </h2>
+        <div class="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            {% for stat in appointment_stats %}
+            <div class="rounded-lg border border-slate-800 bg-slate-950/80 p-4">
+                <p class="text-xs text-slate-400 uppercase">{{ stat.status }}</p>
+                <p class="text-2xl font-bold text-slate-100 mt-1">{{ stat.count }}</p>
+                <div class="mt-2 h-1 w-full bg-slate-800 rounded">
+                    <div class="h-1 rounded transition-all
+                        {% if stat.status == 'Tamamlandı' %}bg-emerald-500
+                        {% elif stat.status == 'İptal' %}bg-rose-500
+                        {% elif stat.status == 'Süreç Başlatıldı' %}bg-amber-500
+                        {% else %}bg-indigo-500{% endif %}"
+                        style="width: {{ (stat.count / total_appointments * 100) if total_appointments > 0 else 0 }}%">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Veritabanı Export -->
+    <div class="rounded-xl border border-emerald-800/70 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6">
+        <h2 class="text-xl font-semibold text-slate-100 mb-4">
+            <i class="bi bi-download text-emerald-400"></i>
+            Veritabanı Export
+        </h2>
+        <p class="text-sm text-slate-300 mb-4">
+            Tüm randevu verilerini Excel (.xlsx) ve CSV formatında tek seferde indir.
+            ZIP dosyası içinde her iki format da bulunur.
+        </p>
+        <form method="POST" action="{{ url_for('operator_export_db') }}" id="exportForm">
+            <button type="submit" id="exportBtn"
+                class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900">
+                <i class="bi bi-database-down text-lg"></i>
+                <span>Veritabanını Export Et (Excel + CSV)</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Veritabanı Boyut Bilgisi -->
+    {% if db_size_info %}
+    <div class="rounded-xl border border-slate-800/70 bg-slate-900/70 p-6">
+        <h2 class="text-xl font-semibold text-slate-100 mb-4">
+            <i class="bi bi-hdd text-sky-400"></i>
+            Veritabanı Boyut Bilgisi
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="text-xs uppercase text-slate-400 bg-slate-950/50">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Tablo Adı</th>
+                        <th class="px-4 py-3 text-right">Boyut (MB)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for table in db_size_info %}
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="px-4 py-3 text-slate-200">{{ table[0] }}</td>
+                        <td class="px-4 py-3 text-right text-slate-300">{{ table[1] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Son Loglar -->
+    <div class="rounded-xl border border-slate-800/70 bg-slate-900/70 p-6">
+        <h2 class="text-xl font-semibold text-slate-100 mb-4">
+            <i class="bi bi-list-ul text-rose-400"></i>
+            Son 100 Sistem Logu
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="text-[10px] uppercase text-slate-400 bg-slate-950/50">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Zaman</th>
+                        <th class="px-3 py-2 text-left">Kullanıcı</th>
+                        <th class="px-3 py-2 text-left">İşlem</th>
+                        <th class="px-3 py-2 text-left">Detaylar</th>
+                        <th class="px-3 py-2 text-left">IP</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/50">
+                    {% for log in recent_logs %}
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="px-3 py-2 text-slate-300 whitespace-nowrap">
+                            {{ log.created_at.strftime('%d.%m.%y %H:%M') }}
+                        </td>
+                        <td class="px-3 py-2 text-slate-200">
+                            {{ log.user.username if log.user else '—' }}
+                        </td>
+                        <td class="px-3 py-2">
+                            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                                {% if 'login' in log.action.lower() %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                                {% elif 'logout' in log.action.lower() %}bg-slate-500/20 text-slate-300 border border-slate-500/40
+                                {% elif 'create' in log.action.lower() %}bg-blue-500/20 text-blue-300 border border-blue-500/40
+                                {% elif 'update' in log.action.lower() %}bg-amber-500/20 text-amber-300 border border-amber-500/40
+                                {% elif 'delete' in log.action.lower() %}bg-rose-500/20 text-rose-300 border border-rose-500/40
+                                {% else %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/40{% endif %}">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-slate-400 max-w-md truncate">
+                            {{ log.details or '—' }}
+                        </td>
+                        <td class="px-3 py-2 text-slate-500 text-[10px]">
+                            {{ log.ip_address or '—' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Export butonu için loading durumu
+    document.getElementById( 'exportForm' )?.addEventListener( 'submit', function ( e ) {
+        const btn = document.getElementById( 'exportBtn' );
+        btn.disabled = true;
+        btn.innerHTML = `
+            <i class="bi bi-hourglass-split animate-spin text-lg"></i>
+            <span>Export ediliyor...</span>
+        `;
+
+        // 10 saniye sonra butonu tekrar aktif et (hata durumu için)
+        setTimeout( () => {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <i class="bi bi-database-down text-lg"></i>
+                <span>Veritabanını Export Et (Excel + CSV)</span>
+            `;
+        }, 10000 );
+    } );
+</script>
+{% endblock %}

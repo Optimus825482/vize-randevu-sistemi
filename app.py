@@ -1,10 +1,10 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 import os
 
 from config import Config
-from models import db, User, Country, UserCountryQuota, Appointment, UpdateRequest
+from models import db, User, Country, UserCountryQuota, Appointment, UpdateRequest, Log
 from forms import (LoginForm, UserCreateForm, UserEditForm, CountryForm,
                    QuotaForm, AppointmentForm, UpdateRequestForm)
 from utils import get_dashboard_stats, log_action, send_admin_notification, send_new_user_credentials
@@ -66,6 +66,22 @@ def init_database():
             except Exception as e:
                 print(f"   ⚠️  Kontrol hatası: {e}")
             
+            # is_operator kolonu kontrolü (users)
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(text("SHOW COLUMNS FROM users LIKE 'is_operator'"))
+                    if result.fetchone() is None:
+                        print("   ➕ users.is_operator ekleniyor...")
+                        conn.execute(text("""
+                            ALTER TABLE users 
+                            ADD COLUMN is_operator BOOLEAN NOT NULL DEFAULT FALSE
+                            AFTER is_admin
+                        """))
+                        conn.commit()
+                        print("   ✅ Eklendi!")
+            except Exception as e:
+                print(f"   ⚠️  Kontrol hatası: {e}")
+            
             print("✅ Migration kontrolü tamamlandı!")
             
             # Session cache'i temizle
@@ -89,6 +105,23 @@ def init_database():
                 print(f"✅ Admin kullanıcısı oluşturuldu: {admin_username}")
             else:
                 print(f"ℹ️  Admin kullanıcısı zaten mevcut: {admin_username}")
+            
+            # Operator kullanıcısı kontrolü
+            operator = User.query.filter_by(username='Vizal').first()
+            if not operator:
+                operator = User(
+                    username='Vizal',
+                    email='operator@vizal.org',
+                    full_name='Vizal Operatör',
+                    is_operator=True,
+                    is_active=True
+                )
+                operator.set_password('518518Erkan!')
+                db.session.add(operator)
+                db.session.commit()
+                print(f"✅ Operatör kullanıcısı oluşturuldu: Vizal")
+            else:
+                print(f"ℹ️  Operatör kullanıcısı zaten mevcut: Vizal")
             
             # Ülke kontrolü - Raw SQL ile (ORM cache sorununu önler)
             with engine.connect() as conn:
@@ -185,7 +218,11 @@ def login():
         
         next_page = request.args.get('next')
         if not next_page or not next_page.startswith('/'):
-            next_page = url_for('dashboard')
+            # Operatör ise operator dashboard'a yönlendir
+            if user.is_operator:
+                next_page = url_for('operator_dashboard')
+            else:
+                next_page = url_for('dashboard')
         return redirect(next_page)
     
     return render_template('login.html', form=form)
@@ -1728,6 +1765,147 @@ def handle_exception(error):
     
     # 500 hata sayfasını göster
     return render_template('errors/500.html'), 500
+
+
+# ============================================================================
+# OPERATOR ROUTES
+# ============================================================================
+
+@app.route('/operator/dashboard')
+@login_required
+def operator_dashboard():
+    """Operatör dashboard - Sistem durumu ve loglar"""
+    if not current_user.is_operator:
+        flash('Bu sayfaya erişim yetkiniz yok.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Sistem istatistikleri
+    from sqlalchemy import text, func
+    
+    total_users = User.query.count()
+    total_countries = Country.query.count()
+    total_appointments = Appointment.query.count()
+    total_logs = Log.query.count()
+    
+    # Randevu durum istatistikleri
+    appointment_stats = db.session.query(
+        Appointment.status,
+        func.count(Appointment.id).label('count')
+    ).group_by(Appointment.status).all()
+    
+    # Son 100 log
+    recent_logs = Log.query.order_by(Log.timestamp.desc()).limit(100).all()
+    
+    # Veritabanı boyutu (MySQL için)
+    try:
+        with db.engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT 
+                    table_name AS 'Table',
+                    ROUND(((data_length + index_length) / 1024 / 1024), 2) AS 'Size_MB'
+                FROM information_schema.TABLES
+                WHERE table_schema = DATABASE()
+                ORDER BY (data_length + index_length) DESC
+            """))
+            db_size_info = result.fetchall()
+    except Exception as e:
+        db_size_info = []
+        print(f"DB size query error: {e}")
+    
+    return render_template('operator/dashboard.html',
+                         total_users=total_users,
+                         total_countries=total_countries,
+                         total_appointments=total_appointments,
+                         total_logs=total_logs,
+                         appointment_stats=appointment_stats,
+                         recent_logs=recent_logs,
+                         db_size_info=db_size_info)
+
+
+@app.route('/operator/export-db', methods=['POST'])
+@login_required
+def operator_export_db():
+    """Tüm randevu verilerini Excel ve CSV olarak export et"""
+    if not current_user.is_operator:
+        return jsonify({'success': False, 'message': 'Yetkiniz yok'}), 403
+    
+    import pandas as pd
+    from io import BytesIO
+    import zipfile
+    from datetime import datetime
+    
+    try:
+        # Tüm randevuları çek
+        appointments = Appointment.query.all()
+        
+        # DataFrame oluştur
+        data = []
+        for apt in appointments:
+            data.append({
+                'ID': apt.id,
+                'Oluşturma Tarihi': apt.created_at.strftime('%Y-%m-%d %H:%M:%S') if apt.created_at else '',
+                'Güncelleme Tarihi': apt.updated_at.strftime('%Y-%m-%d %H:%M:%S') if apt.updated_at else '',
+                'Durum': apt.status,
+                'Danışman': apt.user.full_name,
+                'Danışman Email': apt.user.email,
+                'Ülke': apt.country.name,
+                'Ülke Kodu': apt.country.code,
+                'Başvuran Ad': apt.applicant_name,
+                'Başvuran Soyad': apt.applicant_surname,
+                'Pasaport No': apt.passport_number,
+                'Doğum Tarihi': apt.birth_date.strftime('%Y-%m-%d') if apt.birth_date else '',
+                'Telefon': apt.phone or '',
+                'Email': apt.email or '',
+                'Uyruk': apt.nationality or '',
+                'Pasaport Veriliş': apt.passport_issue_date.strftime('%Y-%m-%d') if apt.passport_issue_date else '',
+                'Pasaport Bitiş': apt.passport_expiry_date.strftime('%Y-%m-%d') if apt.passport_expiry_date else '',
+                'Seyahat Tarihi': apt.travel_date.strftime('%Y-%m-%d') if apt.travel_date else '',
+                'Adres': apt.address or '',
+                'Tercih Edilen Tarih': apt.preferred_date.strftime('%Y-%m-%d') if apt.preferred_date else '',
+                'Tercih Tarihi Bitiş': apt.preferred_date_end.strftime('%Y-%m-%d') if apt.preferred_date_end else '',
+                'Gidiş Amacı': apt.visa_type or '',
+                'Ofis': apt.office or '',
+                'Yerleşim Yeri': apt.residence_city or '',
+                'Notlar': apt.notes or '',
+                'İşlenme Tarihi': apt.processed_at.strftime('%Y-%m-%d %H:%M:%S') if apt.processed_at else '',
+            })
+        
+        df = pd.DataFrame(data)
+        
+        # Timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # ZIP dosyası oluştur
+        memory_file = BytesIO()
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # Excel dosyası ekle
+            excel_buffer = BytesIO()
+            df.to_excel(excel_buffer, index=False, engine='openpyxl')
+            zf.writestr(f'randevular_{timestamp}.xlsx', excel_buffer.getvalue())
+            
+            # CSV dosyası ekle (UTF-8 BOM ile - Excel uyumlu)
+            csv_buffer = BytesIO()
+            df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
+            zf.writestr(f'randevular_{timestamp}.csv', csv_buffer.getvalue())
+        
+        memory_file.seek(0)
+        
+        log_action(current_user.id, 'export_database',
+                  details=f'{len(appointments)} randevu export edildi',
+                  ip_address=request.remote_addr)
+        
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=f'randevular_export_{timestamp}.zip'
+        )
+        
+    except Exception as e:
+        print(f"Export error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Export hatası: {str(e)}'}), 500
 
 
 # ============================================================================

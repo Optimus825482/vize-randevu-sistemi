@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(150), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    is_operator = db.Column(db.Boolean, default=False)  # Operatör rolü
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
@@ -220,3 +221,7 @@ class SystemLog(db.Model):
     
     def __repr__(self):
         return f'<Log {self.id} - {self.action} by User {self.user_id}>'
+
+
+# Alias for easier access
+Log = SystemLog

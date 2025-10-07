@@ -581,6 +581,7 @@ def admin_country_create():
             flag_emoji=form.flag_emoji.data,
             is_active=form.is_active.data,
             office_required=form.office_required.data,
+            residence_city_required=form.residence_city_required.data,
             required_fields=request.form.get('required_fields', '{}')
         )
         
@@ -614,6 +615,7 @@ def admin_country_edit(country_id):
         country.flag_emoji = form.flag_emoji.data
         country.is_active = form.is_active.data
         country.office_required = form.office_required.data
+        country.residence_city_required = form.residence_city_required.data
         country.required_fields = request.form.get('required_fields', '{}')
         
         db.session.commit()
@@ -1047,6 +1049,9 @@ def user_appointments_by_country(country_id):
     from config import Config
     form.office.choices = [('', 'Seçiniz...')] + [(office, office) for office in Config.OFFICE_CHOICES]
     
+    # Yerleşim yeri (Türkiye illeri) seçeneklerini forma ekle
+    form.residence_city.choices = [('', 'Seçiniz...')] + [(city, city) for city in Config.TURKEY_CITIES]
+    
     if request.method == 'GET':
         form.country_id.data = country.id
 
@@ -1061,6 +1066,18 @@ def user_appointments_by_country(country_id):
             selected_office = form.office.data
             if country.office_required and not selected_office:
                 flash('Bu ülke için ofis seçimi zorunludur.', 'danger')
+                return render_template('user/appointments_country.html',
+                                     country=country,
+                                     quota=quota,
+                                     used_quota=used_quota,
+                                     remaining_quota=remaining_quota,
+                                     appointments=[],
+                                     form=form)
+            
+            # Yerleşim yeri kontrolü - eğer ülke için zorunluysa
+            selected_residence_city = form.residence_city.data
+            if country.residence_city_required and not selected_residence_city:
+                flash('Bu ülke için yerleşim yeri (ikametgah şehri) seçimi zorunludur.', 'danger')
                 return render_template('user/appointments_country.html',
                                      country=country,
                                      quota=quota,
@@ -1085,8 +1102,10 @@ def user_appointments_by_country(country_id):
                 applicant_name=form.applicant_name.data,
                 applicant_surname=form.applicant_surname.data,
                 passport_number=form.passport_number.data,
-                # Ofis bilgisi (yeni)
+                # Ofis bilgisi
                 office=selected_office if selected_office else None,
+                # Yerleşim yeri bilgisi (yeni)
+                residence_city=selected_residence_city if selected_residence_city else None,
                 # Dinamik alanlar
                 birth_date=parse_date(request.form.get('birth_date')),
                 phone=request.form.get('phone') or None,

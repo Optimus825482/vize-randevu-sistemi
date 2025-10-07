@@ -235,6 +235,24 @@
                 </div>
                 {% endif %}
 
+                <!-- Yerleşim Yeri Seçimi (Eğer ülke için zorunluysa) -->
+                {% if country.residence_city_required %}
+                <div>
+                    {{ form.residence_city.label(class_='text-sm font-medium text-slate-200') }}
+                    <span class="text-red-400 ml-1">*</span>
+                    {{ form.residence_city(class_='mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4
+                    py-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2
+                    focus:ring-sky-400/40', required=true) }}
+                    {% if form.residence_city.errors %}
+                    <p class="mt-2 text-xs text-red-300">{{ form.residence_city.errors[0] }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-xs text-slate-500">
+                        <i class="bi bi-geo-alt-fill text-emerald-400"></i>
+                        Bu ülke için yerleşim yeri (ikametgah şehri) seçimi zorunludur
+                    </p>
+                </div>
+                {% endif %}
+
                 <!-- Dinamik Alanlar Container -->
                 <div id="dynamicFieldsContainer" class="space-y-6"></div>
 

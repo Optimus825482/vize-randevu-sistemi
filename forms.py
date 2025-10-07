@@ -86,7 +86,11 @@ class AppointmentForm(FlaskForm):
     
     # Ek bilgiler
     address = TextAreaField('Adres', validators=[Optional()])
-    visa_type = StringField('Vize Türü', validators=[Optional(), Length(max=100)])
+    visa_type = SelectField('Gidiş Amacı', validators=[Optional()], choices=[
+        ('', 'Seçiniz...'),
+        ('Turistik', 'Turistik'),
+        ('Ticari', 'Ticari')
+    ])
     notes = TextAreaField('Notlar', validators=[Optional()])
 
 

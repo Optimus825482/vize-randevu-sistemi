@@ -1795,7 +1795,7 @@ def operator_dashboard():
     ).group_by(Appointment.status).all()
     
     # Son 100 log
-    recent_logs = Log.query.order_by(Log.timestamp.desc()).limit(100).all()
+    recent_logs = Log.query.order_by(Log.created_at.desc()).limit(100).all()
     
     # Veritabanı boyutu (MySQL için)
     try:

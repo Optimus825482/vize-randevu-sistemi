@@ -447,6 +447,7 @@ def send_new_user_credentials(user_email, username, password, full_name):
         bool: Başarılı ise True, hata oluşursa False
     """
     from flask import current_app
+    import os
     
     print("=" * 70)
     print(f"📧 YENİ KULLANICI MAİL GÖNDERİMİ BAŞLIYOR")
@@ -456,6 +457,31 @@ def send_new_user_credentials(user_email, username, password, full_name):
     print(f"   ├─ Tam Ad: {full_name}")
     print(f"   └─ Şifre Uzunluğu: {len(password)} karakter")
     
+    # Railway environment check
+    is_railway = os.environ.get('RAILWAY_ENVIRONMENT')
+    print(f"\n🚀 Ortam Kontrolü:")
+    print(f"   ├─ Railway Ortamı: {'EVET ✅' if is_railway else 'HAYIR (Local)'}")
+    
+    # Environment variable'ları kontrol et
+    env_mail_username = os.environ.get('MAIL_USERNAME')
+    env_mail_password = os.environ.get('MAIL_PASSWORD')
+    env_mail_server = os.environ.get('MAIL_SERVER')
+    env_mail_port = os.environ.get('MAIL_PORT')
+    
+    print(f"   ├─ MAIL_USERNAME env var: {'✅ VAR' if env_mail_username else '❌ YOK'}")
+    print(f"   ├─ MAIL_PASSWORD env var: {'✅ VAR' if env_mail_password else '❌ YOK'}")
+    print(f"   ├─ MAIL_SERVER env var: {'✅ VAR' if env_mail_server else '❌ YOK (default kullanılacak)'}")
+    print(f"   └─ MAIL_PORT env var: {'✅ VAR' if env_mail_port else '❌ YOK (default kullanılacak)'}")
+    
+    # Railway'de environment variable yoksa hata ver
+    if is_railway and (not env_mail_username or not env_mail_password):
+        error_msg = "❌ CRITICAL: Railway'de MAIL_USERNAME veya MAIL_PASSWORD environment variable'ı bulunamadı!"
+        print(f"\n{error_msg}")
+        print("   Railway Dashboard → Variables kısmına şu değişkenleri ekleyin:")
+        print("   - MAIL_USERNAME=vizal8254@gmail.com")
+        print("   - MAIL_PASSWORD=rsyg yksq tecj meel")
+        raise Exception(error_msg)
+    
     try:
         # E-posta ayarlarını config'den al
         sender_email = current_app.config.get('MAIL_USERNAME', 'vizal8254@gmail.com')
@@ -463,10 +489,11 @@ def send_new_user_credentials(user_email, username, password, full_name):
         mail_server = current_app.config.get('MAIL_SERVER', 'smtp.gmail.com')
         mail_port = current_app.config.get('MAIL_PORT', 587)
         
-        print(f"\n📮 SMTP Ayarları:")
+        print(f"\n📮 SMTP Ayarları (Config'den):")
         print(f"   ├─ Server: {mail_server}")
         print(f"   ├─ Port: {mail_port}")
         print(f"   ├─ Gönderen: {sender_email}")
+        print(f"   ├─ Şifre Uzunluğu: {len(sender_password)} karakter")
         print(f"   └─ TLS: Aktif")
         
         # E-posta oluştur

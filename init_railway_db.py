@@ -62,6 +62,9 @@ def init_database():
             
             print("✅ Migration kontrolü tamamlandı!")
             
+            # Session'ı temizle - yeni kolonlar için cache'i yenile
+            db.session.expire_all()
+            
             # Admin kullanıcısı kontrolü
             admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
             admin = User.query.filter_by(username=admin_username).first()
@@ -82,8 +85,12 @@ def init_database():
             else:
                 print(f"ℹ️  Admin kullanıcısı zaten mevcut: {admin_username}")
             
-            # Örnek ülkeler kontrolü
-            if Country.query.count() == 0:
+            # Örnek ülkeler kontrolü - Raw SQL ile sayı kontrol et
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT COUNT(*) FROM countries"))
+                country_count = result.scalar()
+            
+            if country_count == 0:
                 print("🌍 Örnek ülkeler ekleniyor...")
                 sample_countries = [
                     {'name': 'Amerika Birleşik Devletleri', 'code': 'USA', 'flag_emoji': '🇺🇸'},
@@ -105,14 +112,19 @@ def init_database():
                 db.session.commit()
                 print(f"✅ {len(sample_countries)} örnek ülke eklendi!")
             else:
-                print(f"ℹ️  Ülkeler zaten mevcut: {Country.query.count()} ülke")
+                print(f"ℹ️  Ülkeler zaten mevcut: {country_count} ülke")
             
             print("\n" + "="*60)
             print("🎉 Railway veritabanı kurulumu başarıyla tamamlandı!")
             print("="*60)
+            # Son durum kontrolü - Raw SQL ile
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT COUNT(*) FROM countries"))
+                final_country_count = result.scalar()
+            
             print(f"👤 Admin Kullanıcı Adı: {admin_username}")
             print(f"🔑 Admin Şifresi: {os.environ.get('ADMIN_PASSWORD', 'Admin123!')}")
-            print(f"📊 Toplam Ülke: {Country.query.count()}")
+            print(f"📊 Toplam Ülke: {final_country_count}")
             print("="*60 + "\n")
             
             return True

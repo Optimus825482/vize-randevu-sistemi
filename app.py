@@ -1730,6 +1730,9 @@ if __name__ == '__main__':
         
         print("✅ Migration kontrolü tamamlandı!\n")
         
+        # Session'ı temizle - yeni kolonlar için cache'i yenile
+        db.session.expire_all()
+        
         # İlk admin oluştur
         admin = User.query.filter_by(username=app.config['ADMIN_USERNAME']).first()
         if not admin:
@@ -1746,8 +1749,12 @@ if __name__ == '__main__':
             print(f"✓ İlk admin oluşturuldu: {app.config['ADMIN_USERNAME']}")
             print(f"✓ Şifre: {app.config['ADMIN_PASSWORD']}")
         
-        # Örnek ülkeler ekle (sadece ilk kurulumda)
-        if Country.query.count() == 0:
+        # Örnek ülkeler ekle (sadece ilk kurulumda) - Raw SQL ile kontrol
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT COUNT(*) FROM countries"))
+            country_count = result.scalar()
+        
+        if country_count == 0:
             sample_countries = [
                 {'name': 'Amerika Birleşik Devletleri', 'code': 'USA', 'flag_emoji': '🇺🇸'},
                 {'name': 'İngiltere', 'code': 'GBR', 'flag_emoji': '🇬🇧'},

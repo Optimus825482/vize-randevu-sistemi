@@ -446,16 +446,28 @@ def send_new_user_credentials(user_email, username, password, full_name):
     Returns:
         bool: Başarılı ise True, hata oluşursa False
     """
-    print(f"📧 Mail gönderiliyor: {user_email}")
+    from flask import current_app
+    
+    print("=" * 70)
+    print(f"📧 YENİ KULLANICI MAİL GÖNDERİMİ BAŞLIYOR")
+    print("=" * 70)
+    print(f"   ├─ Alıcı E-posta: {user_email}")
+    print(f"   ├─ Kullanıcı Adı: {username}")
+    print(f"   ├─ Tam Ad: {full_name}")
+    print(f"   └─ Şifre Uzunluğu: {len(password)} karakter")
     
     try:
-        # E-posta ayarları
-        sender_email = "vizal8254@gmail.com"
-        sender_password = "rsyg yksq tecj meel"  # Gmail uygulama şifresi
+        # E-posta ayarlarını config'den al
+        sender_email = current_app.config.get('MAIL_USERNAME', 'vizal8254@gmail.com')
+        sender_password = current_app.config.get('MAIL_PASSWORD', 'rsyg yksq tecj meel')
+        mail_server = current_app.config.get('MAIL_SERVER', 'smtp.gmail.com')
+        mail_port = current_app.config.get('MAIL_PORT', 587)
         
+        print(f"\n📮 SMTP Ayarları:")
+        print(f"   ├─ Server: {mail_server}")
+        print(f"   ├─ Port: {mail_port}")
         print(f"   ├─ Gönderen: {sender_email}")
-        print(f"   ├─ Alıcı: {user_email}")
-        print(f"   └─ Kullanıcı: {username}")
+        print(f"   └─ TLS: Aktif")
         
         # E-posta oluştur
         msg = MIMEMultipart('alternative')

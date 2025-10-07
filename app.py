@@ -337,9 +337,22 @@ def admin_user_create():
             if mail_sent:
                 flash(f'✅ Kullanıcı "{user.username}" başarıyla oluşturuldu. Giriş bilgileri e-posta ile gönderildi.', 'success')
             else:
-                error_detail = f" (Hata: {mail_error})" if mail_error else ""
                 flash(f'✅ Kullanıcı "{user.username}" başarıyla oluşturuldu.', 'success')
-                flash(f'⚠️ E-posta gönderilemedi{error_detail}. Lütfen kullanıcıya şifresini manuel olarak iletin: {plain_password}', 'warning')
+                
+                # Detaylı hata mesajı
+                if mail_error:
+                    if 'Authentication' in mail_error or '535' in mail_error:
+                        flash('⚠️ E-posta gönderilemedi: Gmail kimlik doğrulama hatası. Lütfen Gmail ayarlarınızı kontrol edin.', 'danger')
+                    elif 'Connection' in mail_error or 'timeout' in mail_error:
+                        flash('⚠️ E-posta gönderilemedi: Mail sunucusuna bağlanılamadı. İnternet bağlantınızı kontrol edin.', 'danger')
+                    else:
+                        flash(f'⚠️ E-posta gönderilemedi: {mail_error}', 'danger')
+                else:
+                    flash('⚠️ E-posta gönderilemedi: Bilinmeyen hata.', 'warning')
+                
+                # Şifre bilgisi - Önemli!
+                flash(f'🔑 ÖNEMLI: Kullanıcıya aşağıdaki şifresini manuel olarak iletin:', 'info')
+                flash(f'Şifre: {plain_password}', 'info')
             
             return redirect(url_for('admin_user_edit', user_id=user.id))
             

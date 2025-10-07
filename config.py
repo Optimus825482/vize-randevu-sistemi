@@ -81,3 +81,11 @@ class Config:
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin123!')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@vizesistemi.com')
+    
+    # Mail ayarları
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'vizal8254@gmail.com')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'rsyg yksq tecj meel')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'vizal8254@gmail.com')

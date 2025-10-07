@@ -48,6 +48,7 @@ class CountryForm(FlaskForm):
     code = StringField('Ülke Kodu (ISO)', validators=[DataRequired(), Length(min=2, max=3)])
     flag_emoji = StringField('Bayrak Emoji', validators=[Optional(), Length(max=10)])
     is_active = BooleanField('Aktif', default=True)
+    office_required = BooleanField('Ofis Seçimi Zorunlu', default=False)
 
 
 class QuotaForm(FlaskForm):
@@ -64,6 +65,9 @@ class AppointmentForm(FlaskForm):
     applicant_name = StringField('Ad', validators=[DataRequired(), Length(max=150)])
     applicant_surname = StringField('Soyad', validators=[DataRequired(), Length(max=150)])
     passport_number = StringField('Pasaport No', validators=[DataRequired(), Length(max=50)])
+    
+    # Ofis seçimi (ülkeye göre zorunlu/opsiyonel)
+    office = SelectField('Ofis', validators=[Optional()], choices=[])
     
     # Dinamik alanlar (ülkeye göre zorunlu/opsiyonel)
     birth_date = DateField('Doğum Tarihi', validators=[Optional()])

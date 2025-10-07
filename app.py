@@ -580,6 +580,7 @@ def admin_country_create():
             code=form.code.data.upper(),
             flag_emoji=form.flag_emoji.data,
             is_active=form.is_active.data,
+            office_required=form.office_required.data,
             required_fields=request.form.get('required_fields', '{}')
         )
         
@@ -612,6 +613,7 @@ def admin_country_edit(country_id):
         country.code = form.code.data.upper()
         country.flag_emoji = form.flag_emoji.data
         country.is_active = form.is_active.data
+        country.office_required = form.office_required.data
         country.required_fields = request.form.get('required_fields', '{}')
         
         db.session.commit()
@@ -1040,6 +1042,11 @@ def user_appointments_by_country(country_id):
 
     form = AppointmentForm()
     form.country_id.choices = [(country.id, f"{country.flag_emoji + ' ' if country.flag_emoji else ''}{country.name}")]
+    
+    # Ofis seçeneklerini config'den al ve forma ekle
+    from config import Config
+    form.office.choices = [('', 'Seçiniz...')] + [(office, office) for office in Config.OFFICE_CHOICES]
+    
     if request.method == 'GET':
         form.country_id.data = country.id
 
@@ -1050,6 +1057,18 @@ def user_appointments_by_country(country_id):
         if remaining_quota <= 0:
             flash('Bu ülke için kota limitine ulaştınız.', 'danger')
         else:
+            # Ofis kontrolü - eğer ülke için zorunluysa
+            selected_office = form.office.data
+            if country.office_required and not selected_office:
+                flash('Bu ülke için ofis seçimi zorunludur.', 'danger')
+                return render_template('user/appointments_country.html',
+                                     country=country,
+                                     quota=quota,
+                                     used_quota=used_quota,
+                                     remaining_quota=remaining_quota,
+                                     appointments=[],
+                                     form=form)
+            
             # Yardımcı fonksiyon - string tarih verisini Date objesine çevir
             def parse_date(date_str):
                 if not date_str:
@@ -1066,6 +1085,8 @@ def user_appointments_by_country(country_id):
                 applicant_name=form.applicant_name.data,
                 applicant_surname=form.applicant_surname.data,
                 passport_number=form.passport_number.data,
+                # Ofis bilgisi (yeni)
+                office=selected_office if selected_office else None,
                 # Dinamik alanlar
                 birth_date=parse_date(request.form.get('birth_date')),
                 phone=request.form.get('phone') or None,

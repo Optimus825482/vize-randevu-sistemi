@@ -89,3 +89,14 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'vizal8254@gmail.com')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'rsyg yksq tecj meel')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'vizal8254@gmail.com')
+    
+    # Ofis seçenekleri
+    OFFICE_CHOICES = [
+        'İzmir Ofis',
+        'İstanbul Gayrettepe Ofis',
+        'İstanbul Beyoğlu Ofis',
+        'Antalya Ofis',
+        'Bursa Ofis',
+        'Edirne Ofis',
+        'Ankara Ofis'
+    ]

@@ -432,3 +432,116 @@ def send_admin_notification(subject, message, action_type='info'):
     except Exception as e:
         print(f"Admin bildirim hatası: {e}")
         return False
+
+def send_new_user_credentials(user_email, username, password, full_name):
+    """
+    Yeni kullanıcıya giriş bilgilerini e-posta ile gönder
+    
+    Args:
+        user_email: Kullanıcının e-posta adresi
+        username: Kullanıcı adı
+        password: Kullanıcı şifresi (düz metin)
+        full_name: Kullanıcının tam adı
+    
+    Returns:
+        bool: Başarılı ise True, hata oluşursa False
+    """
+    try:
+        # E-posta ayarları
+        sender_email = "vizal8254@gmail.com"
+        sender_password = "rsyg yksq tecj meel"  # Gmail uygulama şifresi
+        
+        # E-posta oluştur
+        msg = MIMEMultipart('alternative')
+        msg['From'] = sender_email
+        msg['To'] = user_email
+        msg['Subject'] = "Vize Randevu Sistemi - Giriş Bilgileriniz"
+        
+        # HTML içerik
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+                .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+                .credentials {{ background: white; padding: 25px; border: 2px solid #10b981; border-radius: 8px; margin: 20px 0; }}
+                .credential-item {{ margin: 15px 0; padding: 10px; background: #f1f5f9; border-radius: 4px; }}
+                .credential-label {{ font-weight: bold; color: #1e293b; }}
+                .credential-value {{ font-size: 18px; color: #059669; font-family: 'Courier New', monospace; }}
+                .warning {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }}
+                .button {{ display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }}
+                .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎉 Hoş Geldiniz!</h1>
+                </div>
+                <div class="content">
+                    <p>Merhaba <strong>{full_name}</strong>,</p>
+                    
+                    <p>Vize Randevu Sistemi'ne kullanıcı olarak eklendiniz. Sisteme giriş yapmak için aşağıdaki bilgileri kullanabilirsiniz:</p>
+                    
+                    <div class="credentials">
+                        <h3 style="color: #1e293b; margin-top: 0;">🔐 Giriş Bilgileriniz</h3>
+                        
+                        <div class="credential-item">
+                            <span class="credential-label">Kullanıcı Adı:</span><br>
+                            <span class="credential-value">{username}</span>
+                        </div>
+                        
+                        <div class="credential-item">
+                            <span class="credential-label">Şifre:</span><br>
+                            <span class="credential-value">{password}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="warning">
+                        <strong>⚠️ Önemli Güvenlik Uyarısı:</strong>
+                        <ul style="margin: 10px 0;">
+                            <li>Bu bilgileri <strong>yalnızca bir kez</strong> gönderilmektedir</li>
+                            <li>Şifrenizi güvenli bir yerde saklayın</li>
+                            <li>İlk girişten sonra şifrenizi değiştirmeniz önerilir</li>
+                            <li>Bu e-postayı kimseyle paylaşmayın</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <a href="#" class="button">Sisteme Giriş Yap →</a>
+                    </div>
+                    
+                    <p style="margin-top: 30px;">Herhangi bir sorunuz olursa lütfen sistem yöneticinizle iletişime geçin.</p>
+                    
+                    <div class="footer">
+                        <p><strong>Vize Randevu Sistemi</strong></p>
+                        <p>Bu otomatik bir e-postadır, lütfen yanıtlamayın.</p>
+                        <p>© 2025 Tüm hakları saklıdır.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # HTML kısmını ekle
+        html_part = MIMEText(html_content, 'html', 'utf-8')
+        msg.attach(html_part)
+        
+        # E-postayı gönder
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        
+        print(f"✅ Kullanıcı giriş bilgileri gönderildi: {user_email}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Kullanıcı e-postası gönderme hatası: {e}")
+        return False

@@ -29,6 +29,48 @@ def init_database():
             db.create_all()
             print("✅ Veritabanı tabloları kontrol edildi")
             
+            # Migration kontrolü - eksik kolonları ekle
+            from sqlalchemy import text
+            print("🔍 Migration kontrolü yapılıyor...")
+            engine = db.engine
+            
+            # residence_city_required kolonu kontrolü (countries)
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(text("SHOW COLUMNS FROM countries LIKE 'residence_city_required'"))
+                    if result.fetchone() is None:
+                        print("   ➕ countries.residence_city_required ekleniyor...")
+                        conn.execute(text("""
+                            ALTER TABLE countries 
+                            ADD COLUMN residence_city_required BOOLEAN NOT NULL DEFAULT FALSE
+                            AFTER office_required
+                        """))
+                        conn.commit()
+                        print("   ✅ Eklendi!")
+            except Exception as e:
+                print(f"   ⚠️  Kontrol hatası: {e}")
+            
+            # residence_city kolonu kontrolü (appointments)
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(text("SHOW COLUMNS FROM appointments LIKE 'residence_city'"))
+                    if result.fetchone() is None:
+                        print("   ➕ appointments.residence_city ekleniyor...")
+                        conn.execute(text("""
+                            ALTER TABLE appointments 
+                            ADD COLUMN residence_city VARCHAR(100) NULL
+                            AFTER office
+                        """))
+                        conn.commit()
+                        print("   ✅ Eklendi!")
+            except Exception as e:
+                print(f"   ⚠️  Kontrol hatası: {e}")
+            
+            print("✅ Migration kontrolü tamamlandı!")
+            
+            # Session cache'i temizle
+            db.session.expire_all()
+            
             # Admin kullanıcısı kontrolü - sadece yoksa oluştur
             admin_username = app.config['ADMIN_USERNAME']
             admin = User.query.filter_by(username=admin_username).first()
@@ -48,8 +90,11 @@ def init_database():
             else:
                 print(f"ℹ️  Admin kullanıcısı zaten mevcut: {admin_username}")
             
-            # Ülke kontrolü - sadece boşsa örnek ekle
-            country_count = Country.query.count()
+            # Ülke kontrolü - Raw SQL ile (ORM cache sorununu önler)
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT COUNT(*) FROM countries"))
+                country_count = result.scalar()
+            
             if country_count == 0:
                 sample_countries = [
                     {'name': 'Amerika Birleşik Devletleri', 'code': 'USA', 'flag_emoji': '🇺🇸'},

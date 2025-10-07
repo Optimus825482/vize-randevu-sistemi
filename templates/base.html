@@ -214,9 +214,19 @@
                         </span>
                         <span>Sistem Logları</span>
                     </a>
+                    {% elif current_user.is_operator if current_user.is_operator is defined else false %}
+                    <p class="mt-6 px-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">Operatör</p>
+                    <a href="{{ url_for('operator_dashboard') }}"
+                        class="sidebar-link {% if request.endpoint == 'operator_dashboard' %}is-active{% endif %}">
+                        <span class="sidebar-link__icon">
+                            <i class="bi bi-gear-wide-connected"></i>
+                        </span>
+                        <span>Operatör Paneli</span>
+                    </a>
                     {% endif %}
 
-                    {% if not current_user.is_admin %}
+                    {% if not current_user.is_admin and not (current_user.is_operator if current_user.is_operator is
+                    defined else false) %}
                     <p class="mt-6 px-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">Danışman</p>
                     <a href="{{ url_for('user_appointments') }}"
                         class="sidebar-link {% if request.endpoint in ['user_appointments', 'user_appointments_by_country', 'user_appointment_edit', 'user_appointment_update_request'] %}is-active{% endif %}">
@@ -346,6 +356,14 @@
                         <i class="bi bi-calendar-week"></i>
                     </span>
                     <span>Randevu</span>
+                </a>
+                {% elif current_user.is_operator if current_user.is_operator is defined else false %}
+                <a href="{{ url_for('operator_dashboard') }}"
+                    class="mobile-dock-link {% if request.endpoint == 'operator_dashboard' %}is-active{% endif %}">
+                    <span class="mobile-dock-link__icon">
+                        <i class="bi bi-gear-wide-connected"></i>
+                    </span>
+                    <span>Operatör</span>
                 </a>
                 {% else %}
                 <a href="{{ url_for('user_appointments') }}"

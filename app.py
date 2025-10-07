@@ -218,8 +218,8 @@ def login():
         
         next_page = request.args.get('next')
         if not next_page or not next_page.startswith('/'):
-            # Operatör ise operator dashboard'a yönlendir
-            if user.is_operator:
+            # Operatör ise operator dashboard'a yönlendir (migration kontrolü ile)
+            if hasattr(user, 'is_operator') and user.is_operator:
                 next_page = url_for('operator_dashboard')
             else:
                 next_page = url_for('dashboard')
@@ -1775,7 +1775,8 @@ def handle_exception(error):
 @login_required
 def operator_dashboard():
     """Operatör dashboard - Sistem durumu ve loglar"""
-    if not current_user.is_operator:
+    # is_operator alanı kontrolü (migration henüz çalışmamışsa)
+    if not hasattr(current_user, 'is_operator') or not current_user.is_operator:
         flash('Bu sayfaya erişim yetkiniz yok.', 'danger')
         return redirect(url_for('dashboard'))
     
@@ -1826,7 +1827,8 @@ def operator_dashboard():
 @login_required
 def operator_export_db():
     """Tüm randevu verilerini Excel ve CSV olarak export et"""
-    if not current_user.is_operator:
+    # is_operator alanı kontrolü (migration henüz çalışmamışsa)
+    if not hasattr(current_user, 'is_operator') or not current_user.is_operator:
         return jsonify({'success': False, 'message': 'Yetkiniz yok'}), 403
     
     import pandas as pd

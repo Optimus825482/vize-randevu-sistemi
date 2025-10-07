@@ -379,6 +379,8 @@
         document.getElementById( 'detailPreferredDate' ).textContent = appointment.preferred_date || '—';
         document.getElementById( 'detailPreferredDateEnd' ).textContent = appointment.preferred_date_end || '—';
         document.getElementById( 'detailVisaType' ).textContent = appointment.visa_type || '—';
+        document.getElementById( 'detailOffice' ).textContent = appointment.office || '—';
+        document.getElementById( 'detailResidenceCity' ).textContent = appointment.residence_city || '—';
         document.getElementById( 'detailNotes' ).textContent = appointment.notes || '—';
         document.getElementById( 'detailCountry' ).textContent = appointment.country.name;
         document.getElementById( 'detailUser' ).textContent = `${appointment.user.full_name} (${appointment.user.username})`;
@@ -543,8 +545,22 @@
                     <p id="detailTravelDate" class="text-slate-100 mt-1"></p>
                 </div>
                 <div>
-                    <label class="text-xs font-medium text-slate-400 uppercase">Vize Türü</label>
+                    <label class="text-xs font-medium text-slate-400 uppercase">Gidiş Amacı</label>
                     <p id="detailVisaType" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase flex items-center gap-1">
+                        <i class="bi bi-building text-amber-400"></i>
+                        Ofis
+                    </label>
+                    <p id="detailOffice" class="text-slate-100 mt-1"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-400 uppercase flex items-center gap-1">
+                        <i class="bi bi-geo-alt-fill text-emerald-400"></i>
+                        Yerleşim Yeri
+                    </label>
+                    <p id="detailResidenceCity" class="text-slate-100 mt-1"></p>
                 </div>
                 <div>
                     <label class="text-xs font-medium text-slate-400 uppercase">Tercih Edilen Tarih</label>

@@ -903,6 +903,8 @@ def admin_appointment_details(apt_id):
             'preferred_date': appointment.preferred_date.strftime('%Y-%m-%d') if appointment.preferred_date else None,
             'preferred_date_end': appointment.preferred_date_end.strftime('%Y-%m-%d') if appointment.preferred_date_end else None,
             'visa_type': appointment.visa_type,
+            'office': appointment.office,
+            'residence_city': appointment.residence_city,
             'notes': appointment.notes,
             'status': appointment.status,
             'created_at': appointment.created_at.strftime('%d.%m.%Y %H:%M'),

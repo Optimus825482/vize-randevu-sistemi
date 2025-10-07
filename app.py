@@ -1109,20 +1109,20 @@ def user_appointments_by_country(country_id):
                       details=f'{country.name} için yeni randevu talebi (#{appointment.id})',
                       ip_address=request.remote_addr)
 
-            # Yöneticiye mail bildirimi gönder
-            try:
-                subject = "Yeni Randevu Talebi"
-                message = f"""
-                <p><strong>Danışman:</strong> {current_user.full_name} (@{current_user.username})</p>
-                <p><strong>Ülke:</strong> {country.flag_emoji} {country.name}</p>
-                <p><strong>Başvuran:</strong> {appointment.applicant_name} {appointment.applicant_surname}</p>
-                <p><strong>Pasaport No:</strong> {appointment.passport_number}</p>
-                <p><strong>Randevu ID:</strong> #{appointment.id}</p>
-                <p><strong>Durum:</strong> <span style="color: #f59e0b;">Bekleme</span></p>
-                """
-                send_admin_notification(subject, message, action_type='info')
-            except Exception as e:
-                print(f"Mail gönderme hatası: {e}")
+            # Yöneticiye mail bildirimi gönder - ŞU ANDA DEVRE DIŞI
+            # try:
+            #     subject = "Yeni Randevu Talebi"
+            #     message = f"""
+            #     <p><strong>Danışman:</strong> {current_user.full_name} (@{current_user.username})</p>
+            #     <p><strong>Ülke:</strong> {country.flag_emoji} {country.name}</p>
+            #     <p><strong>Başvuran:</strong> {appointment.applicant_name} {appointment.applicant_surname}</p>
+            #     <p><strong>Pasaport No:</strong> {appointment.passport_number}</p>
+            #     <p><strong>Randevu ID:</strong> #{appointment.id}</p>
+            #     <p><strong>Durum:</strong> <span style="color: #f59e0b;">Bekleme</span></p>
+            #     """
+            #     send_admin_notification(subject, message, action_type='info')
+            # except Exception as e:
+            #     print(f"Mail gönderme hatası: {e}")
 
             flash('Randevu talebiniz kaydedildi.', 'success')
             return redirect(url_for('user_appointments_by_country', country_id=country.id))
@@ -1251,20 +1251,20 @@ def user_appointment_update_request(apt_id):
                   details=f'Randevu #{apt_id} için güncelleme talebi',
                   ip_address=request.remote_addr)
 
-        # Yöneticiye mail bildirimi gönder
-        try:
-            subject = "Randevu Güncelleme Talebi"
-            message = f"""
-            <p><strong>Danışman:</strong> {current_user.full_name} (@{current_user.username})</p>
-            <p><strong>Talep Tipi:</strong> <span style="color: #f59e0b;">Güncelleme</span></p>
-            <p><strong>Randevu ID:</strong> #{appointment.id}</p>
-            <p><strong>Başvuran:</strong> {appointment.applicant_name} {appointment.applicant_surname}</p>
-            <p><strong>Ülke:</strong> {appointment.country.flag_emoji} {appointment.country.name}</p>
-            <p><strong>Gerekçe:</strong> {update_request.reason}</p>
-            """
-            send_admin_notification(subject, message, action_type='warning')
-        except Exception as e:
-            print(f"Mail gönderme hatası: {e}")
+        # Yöneticiye mail bildirimi gönder - ŞU ANDA DEVRE DIŞI
+        # try:
+        #     subject = "Randevu Güncelleme Talebi"
+        #     message = f"""
+        #     <p><strong>Danışman:</strong> {current_user.full_name} (@{current_user.username})</p>
+        #     <p><strong>Talep Tipi:</strong> <span style="color: #f59e0b;">Güncelleme</span></p>
+        #     <p><strong>Randevu ID:</strong> #{appointment.id}</p>
+        #     <p><strong>Başvuran:</strong> {appointment.applicant_name} {appointment.applicant_surname}</p>
+        #     <p><strong>Ülke:</strong> {appointment.country.flag_emoji} {appointment.country.name}</p>
+        #     <p><strong>Gerekçe:</strong> {update_request.reason}</p>
+        #     """
+        #     send_admin_notification(subject, message, action_type='warning')
+        # except Exception as e:
+        #     print(f"Mail gönderme hatası: {e}")
 
         flash('Güncelleme talebiniz iletildi. Yönetici en kısa sürede değerlendirecektir.', 'success')
         return redirect(url_for('user_appointments'))

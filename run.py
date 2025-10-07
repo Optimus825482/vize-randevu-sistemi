@@ -4,17 +4,29 @@
 from app import app
 
 if __name__ == '__main__':
+    import os
+    
+    # DEBUG mode kontrolü - Production'da KAPALI olmalı
+    DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    PORT = int(os.environ.get('PORT', 5000))
+    
     print("\n" + "="*60)
     print(" 🌍 VİZE RANDEVU YÖNETİM SİSTEMİ")
     print("="*60)
-    print("\n📌 Sistem başlatılıyor...\n")
+    print(f"\n📌 Sistem başlatılıyor...")
+    print(f"   ├─ Debug Mode: {'✅ AÇIK (Development)' if DEBUG_MODE else '🔒 KAPALI (Production)'}")
+    print(f"   ├─ Port: {PORT}")
+    print(f"   └─ Host: 0.0.0.0\n")
+    
+    if DEBUG_MODE and os.environ.get('RAILWAY_ENVIRONMENT'):
+        print("⚠️  WARNING: Production ortamında DEBUG mode açık!")
     
     try:
         app.run(
-            debug=True,
+            debug=DEBUG_MODE,
             host='0.0.0.0',
-            port=5000,
-            use_reloader=True
+            port=PORT,
+            use_reloader=DEBUG_MODE  # Sadece debug modunda reloader kullan
         )
     except KeyboardInterrupt:
         print("\n\n✓ Sistem kapatıldı.")

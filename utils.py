@@ -358,11 +358,23 @@ def send_admin_notification(subject, message, action_type='info'):
         message: E-posta mesajı (HTML formatında olabilir)
         action_type: Bildirim tipi (info, warning, success, danger)
     """
+    from flask import current_app
+    from markupsafe import escape
+    
     try:
-        # E-posta ayarları
-        sender_email = "vizal8254@gmail.com"
-        sender_password = "rsyg yksq tecj meel"  # Gmail uygulama şifresi
-        receiver_email = "vizal8254@gmail.com"  # Şimdilik kendine gönder
+        # E-posta ayarlarını config'den al - GÜVENLİ
+        sender_email = current_app.config.get('MAIL_USERNAME')
+        sender_password = current_app.config.get('MAIL_PASSWORD')
+        receiver_email = current_app.config.get('ADMIN_EMAIL', sender_email)
+        
+        # Credentials kontrolü
+        if not sender_email or not sender_password:
+            print("⚠️  Mail credentials yapılandırılmamış, bildirim gönderilemedi")
+            return False
+        
+        # HTML Injection koruması - SANITIZE
+        safe_subject = escape(subject)
+        safe_message = escape(message)
         
         # E-posta oluştur
         msg = MIMEMultipart('alternative')
@@ -398,10 +410,10 @@ def send_admin_notification(subject, message, action_type='info'):
                 <div class="content">
                     <p>Merhaba <strong>Yönetici</strong>,</p>
                     <div class="badge badge-{action_type}">
-                        {subject}
+                        {safe_subject}
                     </div>
                     <div class="message">
-                        {message}
+                        {safe_message}
                     </div>
                     <p><strong>Tarih:</strong> {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}</p>
                     <p>Detaylı bilgi için lütfen yönetim paneline giriş yapın.</p>

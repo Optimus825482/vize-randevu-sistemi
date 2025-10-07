@@ -7,7 +7,16 @@ class Config:
     """Uygulama yapılandırma sınıfı"""
     
     # Flask temel ayarları
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    
+    # SECRET_KEY kontrolü - Production için zorunlu
+    if not SECRET_KEY:
+        if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('FLASK_ENV') == 'production':
+            raise ValueError("❌ CRITICAL: SECRET_KEY environment variable zorunludur!")
+        else:
+            # Development için geçici key
+            SECRET_KEY = 'dev-secret-key-ONLY-FOR-DEVELOPMENT'
+            print("⚠️  WARNING: Development mode - Geçici SECRET_KEY kullanılıyor")
     
     # Veritabanı ayarları
     # Railway DATABASE_URL'i önce kontrol et - Tüm olası isimleri dene
@@ -64,10 +73,24 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
     
+    # Connection Pool Ayarları - Performance ve Security
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'pool_recycle': 3600,
+        'pool_pre_ping': True,
+        'max_overflow': 20,
+        'pool_timeout': 30
+    }
+    
     # Güvenlik
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    PERMANENT_SESSION_LIFETIME = 3600  # 1 saat
+    SESSION_COOKIE_SAMESITE = 'Strict'  # Lax'tan Strict'e değiştirildi
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'  # HTTPS zorunlu production'da
+    PERMANENT_SESSION_LIFETIME = 1800  # 30 dakika (1800 saniye)
+    
+    # CSRF Protection
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = 3600  # 1 saat
     
     # Dosya yükleme
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
@@ -82,13 +105,19 @@ class Config:
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin123!')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@vizesistemi.com')
     
-    # Mail ayarları
+    # Mail ayarları - ENVIRONMENT VARIABLES ZORUNLU
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'vizal8254@gmail.com')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'rsyg yksq tecj meel')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'vizal8254@gmail.com')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', MAIL_USERNAME)
+    
+    # Mail credentials kontrolü - Production için zorunlu
+    if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('FLASK_ENV') == 'production':
+        if not MAIL_USERNAME or not MAIL_PASSWORD:
+            print("⚠️  WARNING: MAIL_USERNAME ve MAIL_PASSWORD environment variables ayarlanmamış!")
+            print("   E-posta özellikleri çalışmayacak!")
     
     # Ofis seçenekleri
     OFFICE_CHOICES = [

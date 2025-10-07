@@ -297,43 +297,59 @@ def admin_user_create():
     
     form = UserCreateForm()
     if form.validate_on_submit():
-        # Şifreyi sakla (mail göndermek için)
-        plain_password = form.password.data
-        
-        user = User(
-            username=form.username.data,
-            email=form.email.data,
-            full_name=form.full_name.data,
-            is_admin=form.is_admin.data,
-            is_active=form.is_active.data
-        )
-        user.set_password(plain_password)
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        log_action(current_user.id, 'create_user', 
-                  details=f'Yeni kullanıcı oluşturuldu: {user.username}',
-                  ip_address=request.remote_addr)
-        
-        # Kullanıcıya giriş bilgilerini mail ile gönder
         try:
-            mail_sent = send_new_user_credentials(
-                user_email=user.email,
-                username=user.username,
-                password=plain_password,
-                full_name=user.full_name
-            )
+            # Şifreyi sakla (mail göndermek için)
+            plain_password = form.password.data
             
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                full_name=form.full_name.data,
+                is_admin=form.is_admin.data,
+                is_active=form.is_active.data
+            )
+            user.set_password(plain_password)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            log_action(current_user.id, 'create_user', 
+                      details=f'Yeni kullanıcı oluşturuldu: {user.username}',
+                      ip_address=request.remote_addr)
+            
+            # Kullanıcıya giriş bilgilerini mail ile gönder
+            mail_sent = False
+            mail_error = None
+            try:
+                mail_sent = send_new_user_credentials(
+                    user_email=user.email,
+                    username=user.username,
+                    password=plain_password,
+                    full_name=user.full_name
+                )
+            except Exception as mail_ex:
+                mail_error = str(mail_ex)
+                print(f"❌ Mail gönderme hatası: {mail_ex}")
+                import traceback
+                traceback.print_exc()
+            
+            # Kullanıcıya bilgi ver
             if mail_sent:
-                flash(f'Kullanıcı "{user.username}" başarıyla oluşturuldu. Giriş bilgileri e-posta ile gönderildi.', 'success')
+                flash(f'✅ Kullanıcı "{user.username}" başarıyla oluşturuldu. Giriş bilgileri e-posta ile gönderildi.', 'success')
             else:
-                flash(f'Kullanıcı "{user.username}" oluşturuldu ancak e-posta gönderilemedi.', 'warning')
+                error_detail = f" (Hata: {mail_error})" if mail_error else ""
+                flash(f'✅ Kullanıcı "{user.username}" başarıyla oluşturuldu.', 'success')
+                flash(f'⚠️ E-posta gönderilemedi{error_detail}. Lütfen kullanıcıya şifresini manuel olarak iletin: {plain_password}', 'warning')
+            
+            return redirect(url_for('admin_user_edit', user_id=user.id))
+            
         except Exception as e:
-            print(f"Mail gönderme hatası: {e}")
-            flash(f'Kullanıcı "{user.username}" oluşturuldu ancak e-posta gönderilemedi.', 'warning')
-        
-        return redirect(url_for('admin_user_edit', user_id=user.id))
+            db.session.rollback()
+            print(f"❌ Kullanıcı oluşturma hatası: {e}")
+            import traceback
+            traceback.print_exc()
+            flash(f'Kullanıcı oluşturulurken bir hata oluştu: {str(e)}', 'danger')
+            return render_template('admin/user_form.html', form=form, user=None, title='Yeni Kullanıcı')
     
     return render_template('admin/user_form.html', form=form, user=None, title='Yeni Kullanıcı')
 
@@ -1576,16 +1592,42 @@ def admin_logs():
 
 @app.errorhandler(404)
 def not_found_error(error):
+    """404 - Sayfa bulunamadı"""
     return render_template('errors/404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
+    """500 - İç sunucu hatası"""
     db.session.rollback()
+    print(f"❌ 500 Hatası: {error}")
+    import traceback
+    traceback.print_exc()
     return render_template('errors/500.html'), 500
 
 @app.errorhandler(403)
 def forbidden_error(error):
+    """403 - Yetkisiz erişim"""
     return render_template('errors/403.html'), 403
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    """Tüm yakalanmamış hataları yakala"""
+    db.session.rollback()
+    print(f"❌ Yakalanmamış Hata: {error}")
+    import traceback
+    traceback.print_exc()
+    
+    # Log kaydı oluştur
+    try:
+        if current_user and current_user.is_authenticated:
+            log_action(current_user.id, 'error',
+                      details=f'Hata: {str(error)}',
+                      ip_address=request.remote_addr)
+    except Exception as log_error:
+        print(f"Log kaydı oluşturulamadı: {log_error}")
+    
+    # 500 hata sayfasını göster
+    return render_template('errors/500.html'), 500
 
 
 # ============================================================================

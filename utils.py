@@ -446,10 +446,16 @@ def send_new_user_credentials(user_email, username, password, full_name):
     Returns:
         bool: Başarılı ise True, hata oluşursa False
     """
+    print(f"📧 Mail gönderiliyor: {user_email}")
+    
     try:
         # E-posta ayarları
         sender_email = "vizal8254@gmail.com"
         sender_password = "rsyg yksq tecj meel"  # Gmail uygulama şifresi
+        
+        print(f"   ├─ Gönderen: {sender_email}")
+        print(f"   ├─ Alıcı: {user_email}")
+        print(f"   └─ Kullanıcı: {username}")
         
         # E-posta oluştur
         msg = MIMEMultipart('alternative')
@@ -532,16 +538,33 @@ def send_new_user_credentials(user_email, username, password, full_name):
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
         
+        print(f"   ├─ SMTP bağlantısı kuruluyor...")
+        
         # E-postayı gönder
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+            print(f"   ├─ TLS başlatılıyor...")
             server.starttls()
+            
+            print(f"   ├─ Giriş yapılıyor...")
             server.login(sender_email, sender_password)
+            
+            print(f"   ├─ Mail gönderiliyor...")
             server.send_message(msg)
         
-        print(f"✅ Kullanıcı giriş bilgileri gönderildi: {user_email}")
+        print(f"✅ Kullanıcı giriş bilgileri başarıyla gönderildi: {user_email}")
         
         return True
         
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ SMTP Kimlik Doğrulama Hatası: {e}")
+        print(f"   └─ Gmail uygulama şifresi geçersiz veya 2FA kapalı olabilir")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ SMTP Hatası: {e}")
+        print(f"   └─ Mail sunucusu ile iletişim kurulamadı")
+        return False
     except Exception as e:
         print(f"❌ Kullanıcı e-postası gönderme hatası: {e}")
+        import traceback
+        traceback.print_exc()
         return False

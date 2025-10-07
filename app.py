@@ -7,7 +7,7 @@ from config import Config
 from models import db, User, Country, UserCountryQuota, Appointment, UpdateRequest
 from forms import (LoginForm, UserCreateForm, UserEditForm, CountryForm,
                    QuotaForm, AppointmentForm, UpdateRequestForm)
-from utils import get_dashboard_stats, log_action, send_admin_notification
+from utils import get_dashboard_stats, log_action, send_admin_notification, send_new_user_credentials
 from sqlalchemy import or_, and_
 
 app = Flask(__name__)
@@ -22,13 +22,14 @@ login_manager.login_message_category = 'warning'
 
 # Railway için otomatik veritabanı kurulumu
 def init_database():
-    """Veritabanını başlat (Railway için)"""
+    """Veritabanını başlat (Railway için) - Mevcut verileri korur"""
     try:
         with app.app_context():
-            # Tabloları oluştur
+            # Sadece eksik tabloları oluştur (mevcut verileri silmez)
             db.create_all()
+            print("✅ Veritabanı tabloları kontrol edildi")
             
-            # Admin kullanıcısı kontrolü
+            # Admin kullanıcısı kontrolü - sadece yoksa oluştur
             admin_username = app.config['ADMIN_USERNAME']
             admin = User.query.filter_by(username=admin_username).first()
             
@@ -44,9 +45,12 @@ def init_database():
                 db.session.add(admin)
                 db.session.commit()
                 print(f"✅ Admin kullanıcısı oluşturuldu: {admin_username}")
+            else:
+                print(f"ℹ️  Admin kullanıcısı zaten mevcut: {admin_username}")
             
-            # Örnek ülkeler kontrolü
-            if Country.query.count() == 0:
+            # Ülke kontrolü - sadece boşsa örnek ekle
+            country_count = Country.query.count()
+            if country_count == 0:
                 sample_countries = [
                     {'name': 'Amerika Birleşik Devletleri', 'code': 'USA', 'flag_emoji': '🇺🇸'},
                     {'name': 'İngiltere', 'code': 'GBR', 'flag_emoji': '🇬🇧'},
@@ -64,14 +68,26 @@ def init_database():
                     db.session.add(country)
                 db.session.commit()
                 print(f"✅ {len(sample_countries)} örnek ülke eklendi")
+            else:
+                print(f"ℹ️  Veritabanında {country_count} ülke mevcut, yeni ülke eklenmedi")
             
-            print("✅ Veritabanı hazır!")
+            # Kullanıcı sayısı
+            user_count = User.query.count()
+            appointment_count = Appointment.query.count()
+            print(f"ℹ️  Toplam kullanıcı: {user_count}")
+            print(f"ℹ️  Toplam randevu: {appointment_count}")
+            print("✅ Veritabanı hazır! (Mevcut veriler korundu)")
     except Exception as e:
         print(f"⚠️ Veritabanı kurulum hatası: {e}")
+        import traceback
+        traceback.print_exc()
 
 # Railway deployment için veritabanını başlat
 if os.environ.get('RAILWAY_ENVIRONMENT'):
+    print("🚀 Railway ortamı algılandı, veritabanı kontrol ediliyor...")
     init_database()
+else:
+    print("💻 Local development ortamı")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -281,6 +297,9 @@ def admin_user_create():
     
     form = UserCreateForm()
     if form.validate_on_submit():
+        # Şifreyi sakla (mail göndermek için)
+        plain_password = form.password.data
+        
         user = User(
             username=form.username.data,
             email=form.email.data,
@@ -288,7 +307,7 @@ def admin_user_create():
             is_admin=form.is_admin.data,
             is_active=form.is_active.data
         )
-        user.set_password(form.password.data)
+        user.set_password(plain_password)
         
         db.session.add(user)
         db.session.commit()
@@ -297,7 +316,23 @@ def admin_user_create():
                   details=f'Yeni kullanıcı oluşturuldu: {user.username}',
                   ip_address=request.remote_addr)
         
-        flash(f'Kullanıcı "{user.username}" başarıyla oluşturuldu.', 'success')
+        # Kullanıcıya giriş bilgilerini mail ile gönder
+        try:
+            mail_sent = send_new_user_credentials(
+                user_email=user.email,
+                username=user.username,
+                password=plain_password,
+                full_name=user.full_name
+            )
+            
+            if mail_sent:
+                flash(f'Kullanıcı "{user.username}" başarıyla oluşturuldu. Giriş bilgileri e-posta ile gönderildi.', 'success')
+            else:
+                flash(f'Kullanıcı "{user.username}" oluşturuldu ancak e-posta gönderilemedi.', 'warning')
+        except Exception as e:
+            print(f"Mail gönderme hatası: {e}")
+            flash(f'Kullanıcı "{user.username}" oluşturuldu ancak e-posta gönderilemedi.', 'warning')
+        
         return redirect(url_for('admin_user_edit', user_id=user.id))
     
     return render_template('admin/user_form.html', form=form, user=None, title='Yeni Kullanıcı')

@@ -20,6 +20,48 @@ def init_database():
             db.create_all()
             print("✅ Tablolar başarıyla oluşturuldu!")
             
+            # Migration kontrolü - eksik kolonları ekle
+            print("\n🔍 Veritabanı migration kontrolü yapılıyor...")
+            engine = db.engine
+            
+            # residence_city_required kolonu kontrolü (countries tablosu)
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(text("SHOW COLUMNS FROM countries LIKE 'residence_city_required'"))
+                    if result.fetchone() is None:
+                        print("   ➕ countries.residence_city_required ekleniyor...")
+                        conn.execute(text("""
+                            ALTER TABLE countries 
+                            ADD COLUMN residence_city_required BOOLEAN NOT NULL DEFAULT FALSE
+                            AFTER office_required
+                        """))
+                        conn.commit()
+                        print("   ✅ countries.residence_city_required eklendi")
+                    else:
+                        print("   ✓ countries.residence_city_required mevcut")
+            except Exception as e:
+                print(f"   ⚠️  residence_city_required kontrolü hatası: {e}")
+            
+            # residence_city kolonu kontrolü (appointments tablosu)
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(text("SHOW COLUMNS FROM appointments LIKE 'residence_city'"))
+                    if result.fetchone() is None:
+                        print("   ➕ appointments.residence_city ekleniyor...")
+                        conn.execute(text("""
+                            ALTER TABLE appointments 
+                            ADD COLUMN residence_city VARCHAR(100) NULL
+                            AFTER office
+                        """))
+                        conn.commit()
+                        print("   ✅ appointments.residence_city eklendi")
+                    else:
+                        print("   ✓ appointments.residence_city mevcut")
+            except Exception as e:
+                print(f"   ⚠️  residence_city kontrolü hatası: {e}")
+            
+            print("✅ Migration kontrolü tamamlandı!")
+            
             # Admin kullanıcısı kontrolü
             admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
             admin = User.query.filter_by(username=admin_username).first()

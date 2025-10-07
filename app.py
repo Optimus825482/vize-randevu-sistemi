@@ -1691,6 +1691,45 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         
+        # Migration kontrolü - eksik kolonları ekle
+        from sqlalchemy import text
+        print("\n🔍 Veritabanı migration kontrolü...")
+        engine = db.engine
+        
+        # residence_city_required kolonu kontrolü (countries tablosu)
+        try:
+            with engine.connect() as conn:
+                result = conn.execute(text("SHOW COLUMNS FROM countries LIKE 'residence_city_required'"))
+                if result.fetchone() is None:
+                    print("   ➕ countries.residence_city_required ekleniyor...")
+                    conn.execute(text("""
+                        ALTER TABLE countries 
+                        ADD COLUMN residence_city_required BOOLEAN NOT NULL DEFAULT FALSE
+                        AFTER office_required
+                    """))
+                    conn.commit()
+                    print("   ✅ Eklendi!")
+        except Exception as e:
+            print(f"   ⚠️  Kontrol hatası: {e}")
+        
+        # residence_city kolonu kontrolü (appointments tablosu)
+        try:
+            with engine.connect() as conn:
+                result = conn.execute(text("SHOW COLUMNS FROM appointments LIKE 'residence_city'"))
+                if result.fetchone() is None:
+                    print("   ➕ appointments.residence_city ekleniyor...")
+                    conn.execute(text("""
+                        ALTER TABLE appointments 
+                        ADD COLUMN residence_city VARCHAR(100) NULL
+                        AFTER office
+                    """))
+                    conn.commit()
+                    print("   ✅ Eklendi!")
+        except Exception as e:
+            print(f"   ⚠️  Kontrol hatası: {e}")
+        
+        print("✅ Migration kontrolü tamamlandı!\n")
+        
         # İlk admin oluştur
         admin = User.query.filter_by(username=app.config['ADMIN_USERNAME']).first()
         if not admin:

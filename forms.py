@@ -49,6 +49,7 @@ class CountryForm(FlaskForm):
     flag_emoji = StringField('Bayrak Emoji', validators=[Optional(), Length(max=10)])
     is_active = BooleanField('Aktif', default=True)
     office_required = BooleanField('Ofis Seçimi Zorunlu', default=False)
+    residence_city_required = BooleanField('Yerleşim Yeri Zorunlu', default=False)
 
 
 class QuotaForm(FlaskForm):
@@ -68,6 +69,9 @@ class AppointmentForm(FlaskForm):
     
     # Ofis seçimi (ülkeye göre zorunlu/opsiyonel)
     office = SelectField('Ofis', validators=[Optional()], choices=[])
+    
+    # Yerleşim yeri (ikametgah şehri) seçimi (ülkeye göre zorunlu/opsiyonel)
+    residence_city = SelectField('Yerleşim Yeri (İkametgah Şehri)', validators=[Optional()], choices=[])
     
     # Dinamik alanlar (ülkeye göre zorunlu/opsiyonel)
     birth_date = DateField('Doğum Tarihi', validators=[Optional()])

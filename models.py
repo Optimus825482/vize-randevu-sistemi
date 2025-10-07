@@ -70,6 +70,9 @@ class Country(db.Model):
     # Ofis seçimi zorunlu mu?
     office_required = db.Column(db.Boolean, default=False, nullable=False)
     
+    # Yerleşim yeri (ikametgah şehri) zorunlu mu?
+    residence_city_required = db.Column(db.Boolean, default=False, nullable=False)
+    
     # İlişkiler
     quotas = db.relationship('UserCountryQuota', backref='country', lazy='dynamic', cascade='all, delete-orphan')
     appointments = db.relationship('Appointment', backref='country', lazy='dynamic', cascade='all, delete-orphan')
@@ -140,6 +143,9 @@ class Appointment(db.Model):
     
     # Ofis bilgisi (yeni alan)
     office = db.Column(db.String(100))  # İzmir Ofis, İstanbul Gayrettepe Ofis, vb.
+    
+    # Yerleşim yeri bilgisi (ikametgah şehri)
+    residence_city = db.Column(db.String(100))  # Türkiye'deki il adı
     
     # Durum takibi
     status = db.Column(db.String(50), default='Bekleme')  # Bekleme, Süreç Başlatıldı, Tamamlandı, İptal

@@ -74,6 +74,22 @@
         </div>
 
         <div class="xl:col-span-2">
+            <label for="office"
+                class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Ofis</label>
+            <select id="office" name="office"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="">Tümü</option>
+                <option value="İzmir Ofis" {{ 'selected' if filters.office=='İzmir Ofis' }}>İzmir Ofis</option>
+                <option value="İstanbul Gayrettepe Ofis" {{ 'selected' if filters.office=='İstanbul Gayrettepe Ofis' }}>İstanbul Gayrettepe Ofis</option>
+                <option value="İstanbul Beyoğlu Ofis" {{ 'selected' if filters.office=='İstanbul Beyoğlu Ofis' }}>İstanbul Beyoğlu Ofis</option>
+                <option value="Antalya Ofis" {{ 'selected' if filters.office=='Antalya Ofis' }}>Antalya Ofis</option>
+                <option value="Bursa Ofis" {{ 'selected' if filters.office=='Bursa Ofis' }}>Bursa Ofis</option>
+                <option value="Edirne Ofis" {{ 'selected' if filters.office=='Edirne Ofis' }}>Edirne Ofis</option>
+                <option value="Ankara Ofis" {{ 'selected' if filters.office=='Ankara Ofis' }}>Ankara Ofis</option>
+            </select>
+        </div>
+
+        <div class="xl:col-span-2">
             <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Tarih
                 (Başlangıç)</label>
             <input type="date" name="date_from" value="{{ filters.date_from }}"
@@ -140,21 +156,24 @@
             <table class="w-full divide-y divide-slate-800">
                 <thead class="bg-slate-900">
                     <tr class="text-[10px] sm:text-xs uppercase tracking-[0.15em] sm:tracking-wide text-slate-400">
-                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[20%] min-w-[140px]">Başvuru Sahibi</th>
-                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[12%] min-w-[100px]">Pasaport</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[18%] min-w-[130px]">Başvuru Sahibi</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[10%] min-w-[90px]">Pasaport</th>
                         <th scope="col"
-                            class="px-2 sm:px-3 py-2.5 text-left hidden lg:table-cell w-[15%] min-w-[120px]">
+                            class="px-2 sm:px-3 py-2.5 text-left hidden lg:table-cell w-[12%] min-w-[100px]">
                             Ülke</th>
                         <th scope="col"
-                            class="px-2 sm:px-3 py-2.5 text-left hidden xl:table-cell w-[13%] min-w-[110px]">
+                            class="px-2 sm:px-3 py-2.5 text-left hidden xl:table-cell w-[12%] min-w-[100px]">
+                            Ofis</th>
+                        <th scope="col"
+                            class="px-2 sm:px-3 py-2.5 text-left hidden xl:table-cell w-[11%] min-w-[100px]">
                             Danışman</th>
-                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[15%] min-w-[110px]">Durum</th>
-                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left hidden lg:table-cell w-[10%] min-w-[90px]">
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[12%] min-w-[100px]">Durum</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left hidden lg:table-cell w-[8%] min-w-[80px]">
                             Oluşturulma</th>
                         <th scope="col"
-                            class="px-2 sm:px-3 py-2.5 text-left hidden 2xl:table-cell w-[10%] min-w-[90px]">
+                            class="px-2 sm:px-3 py-2.5 text-left hidden 2xl:table-cell w-[8%] min-w-[80px]">
                             Güncellenme</th>
-                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[15%] min-w-[130px]">İşlemler</th>
+                        <th scope="col" class="px-2 sm:px-3 py-2.5 text-left w-[13%] min-w-[120px]">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80 text-[11px] sm:text-xs">
@@ -177,6 +196,12 @@
                                 <div class="truncate">
                                     <div class="text-slate-100 truncate">{{ appointment.country.name }}</div>
                                 </div>
+                            </div>
+                        </td>
+                        <td class="px-2 sm:px-3 py-2.5 hidden xl:table-cell">
+                            <div class="flex items-center gap-1.5">
+                                <i class="bi bi-building text-amber-400 flex-shrink-0"></i>
+                                <div class="text-slate-100 truncate">{{ appointment.office or '—' }}</div>
                             </div>
                         </td>
                         <td class="px-2 sm:px-3 py-2.5 hidden xl:table-cell">
@@ -230,7 +255,7 @@
                     {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="8"
+                        <td colspan="9"
                             class="px-3 sm:px-4 py-8 sm:py-10 text-center text-slate-400 text-xs sm:text-sm">
                             Filtrelere uygun randevu talebi bulunamadı.
                         </td>

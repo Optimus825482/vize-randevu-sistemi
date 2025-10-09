@@ -109,10 +109,10 @@ railway variables set FLASK_ENV="production"
 railway variables set MAIL_PASSWORD="<yeni-gmail-app-password>"
 
 # 4. Deploy
-git add .
-git commit -m "🔒 Security: Critical fixes applied"
-git push origin main
-railway up
+    git add .
+    git commit -m "🔒 Security: Critical fixes applied"
+    git push origin main
+    railway up
 ```
 
 ### BU HAFTA (Yüksek Öncelik)

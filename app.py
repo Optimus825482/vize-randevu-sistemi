@@ -823,6 +823,7 @@ def admin_appointments():
     status = request.args.get('status', 'all')
     country_id = request.args.get('country_id', type=int)
     user_id = request.args.get('user_id', type=int)
+    office = request.args.get('office', '').strip()
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
     sort = request.args.get('sort', 'newest')
@@ -844,6 +845,9 @@ def admin_appointments():
 
     if country_id:
         filters.append(Appointment.country_id == country_id)
+    
+    if office:
+        filters.append(Appointment.office == office)
 
     if date_from:
         try:
@@ -893,6 +897,7 @@ def admin_appointments():
         'status': status,
         'country_id': country_id if country_id else '',
         'user_id': user_id if user_id else '',
+        'office': office,
         'date_from': date_from or '',
         'date_to': date_to or '',
         'sort': sort,

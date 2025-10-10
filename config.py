@@ -124,6 +124,7 @@ class Config:
         'İzmir Ofis',
         'İstanbul Gayrettepe Ofis',
         'İstanbul Beyoğlu Ofis',
+        'İstanbul - Altunizade',
         'Antalya Ofis',
         'Bursa Ofis',
         'Edirne Ofis',
